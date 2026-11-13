@@ -3,12 +3,32 @@ class AudioController {
     this.audioCtx = null;
     this.musicEnabled = true;
     this.sfxEnabled = true;
+    
+    // Background music setup using your m4a file
+    this.bgMusic = new Audio("galaxtartheme.m4a");
+    this.bgMusic.loop = true;
+    this.bgMusic.volume = 0.5;
   }
+
   init() {
     if (!this.audioCtx) {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    // Attempt to play background music on first user interaction if enabled
+    if (this.musicEnabled && this.bgMusic.paused) {
+      this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
+    }
   }
+
+  setMusicEnabled(val) {
+    this.musicEnabled = val;
+    if (val) {
+      this.bgMusic.play().catch(e => console.log("Music play error:", e));
+    } else {
+      this.bgMusic.pause();
+    }
+  }
+
   playGunSound() {
     if (!this.sfxEnabled) return;
     this.init();
@@ -25,6 +45,7 @@ class AudioController {
     osc.start();
     osc.stop(this.audioCtx.currentTime + 0.1);
   }
+
   playChargeBeamSound() {
     if (!this.sfxEnabled) return;
     this.init();
@@ -41,6 +62,7 @@ class AudioController {
     osc.start();
     osc.stop(this.audioCtx.currentTime + 0.25);
   }
+
   playExplosion(isAsteroid = false) {
     if (!this.sfxEnabled) return;
     this.init();
