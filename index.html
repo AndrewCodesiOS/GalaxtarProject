@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GALAXTAR</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Persistent Background Starfield -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- MAIN MENU VIEW -->
+    <section id="view-menu" class="view active">
+      <div class="top-bar right-only">
+        <div class="fuel-widget" id="fuel-widget">
+          <div id="fuel-expansion" class="fuel-expansion hidden">
+            <span id="fuel-text">200/200</span>
+            <button id="btn-refuel" class="pill-btn green hidden">Refuel (0 pts)</button>
+          </div>
+          <button id="btn-fuel-icon" class="fuel-circle" title="Fuel Status">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="fuel-ring" class="circle" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span class="fuel-glyph">⛽</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="menu-center">
+        <h1 class="game-title">GALAXTAR</h1>
+        <p id="welcome-banner" class="welcome-banner hidden"></p>
+
+        <div class="menu-buttons">
+          <button id="btn-launch" class="menu-btn green">FLIGHT 1</button>
+          <button id="btn-stats" class="menu-btn blue">STATS</button>
+          <button id="btn-upgrades" class="menu-btn purple">UPGRADES</button>
+          <button id="btn-logs" class="menu-btn yellow">
+            FLIGHT LOGS
+            <span id="unread-badge" class="unread-badge hidden">!</span>
+          </button>
+          <button id="btn-settings" class="menu-btn red">SETTINGS</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPLORE / GAMEPLAY VIEW -->
+    <section id="view-explore" class="view">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- HUD Controls -->
+      <button id="btn-boost" class="hud-btn top-left hidden" title="Toggle Hyperspeed">⚡</button>
+      <button id="btn-pause" class="hud-btn top-right" title="Pause Flight">❚❚</button>
+      <button id="btn-shoot" class="hud-btn bottom-left" title="Fire Weapons (Triple-tap for Charge Beam)">🔥</button>
+
+      <!-- Game Over Overlay -->
+      <div id="gameover-overlay" class="overlay hidden">
+        <div class="gameover-card">
+          <h2>FLIGHT STATS</h2>
+          <div id="gameover-grid" class="gameover-grid"></div>
+          <button id="btn-continue" class="continue-btn">TAP TO CONTINUE</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAUSE VIEW -->
+    <section id="view-pause" class="view">
+      <div class="screen-header">
+        <div class="spacer-44"></div>
+        <h2>PAUSED</h2>
+        <div class="spacer-44"></div>
+      </div>
+      <div class="scroll-content centered-col">
+        <button id="btn-pause-guide" class="guide-hero-btn">
+          <div class="guide-icon">📖</div>
+          <span>PILOT'S GUIDE: READ ME</span>
+        </button>
+
+        <div class="settings-group">
+          <div class="setting-row">
+            <span class="setting-label">MUSIC</span>
+            <div class="toggle-group">
+              <button id="pause-music-off" class="toggle-btn">OFF</button>
+              <button id="pause-music-on" class="toggle-btn">ON</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">SFX</span>
+            <div class="toggle-group">
+              <button id="pause-sfx-off" class="toggle-btn">OFF</button>
+              <button id="pause-sfx-on" class="toggle-btn">ON</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pause-actions">
+          <button id="btn-resume-flight" class="action-btn green-bg">RESUME FLIGHT</button>
+          <button id="btn-end-flight" class="action-btn red-bg">END FLIGHT</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS VIEW -->
+    <section id="view-stats" class="view">
+      <div class="screen-header">
+        <button class="back-btn" data-back="view-menu">«</button>
+        <h2>STATS</h2>
+        <button id="btn-player-profile" class="profile-circle-btn" title="Pilot Profile">👤</button>
+      </div>
+      <div class="scroll-content">
+        <div class="stat-box">
+          <h3>LAST FLIGHT</h3>
+          <div class="stat-grid-2">
+            <div class="stat-item"><span id="stat-last-dist" class="stat-val">0</span><span class="stat-lbl">DISTANCE</span></div>
+            <div class="stat-item"><span id="stat-last-ships" class="stat-val">0</span><span class="stat-lbl">SHIPS</span></div>
+            <div class="stat-item"><span id="stat-last-ast" class="stat-val">0</span><span class="stat-lbl">ASTEROIDS</span></div>
+            <div class="stat-item"><span id="stat-last-pts" class="stat-val">0</span><span class="stat-lbl">POINTS</span></div>
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <h3>ALL TIME</h3>
+          <div class="stat-grid-2">
+            <div class="stat-item"><span id="stat-all-longest" class="stat-val">0</span><span class="stat-lbl">LONGEST FLIGHT</span></div>
+            <div class="stat-item"><span id="stat-all-ships" class="stat-val">0</span><span class="stat-lbl">SHIPS</span></div>
+          </div>
+          <div class="stat-grid-1">
+            <div class="stat-item"><span id="stat-all-dist" class="stat-val">0</span><span class="stat-lbl">TOTAL DISTANCE</span></div>
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <h3>OBJECTS PASSED</h3>
+          <div class="stat-grid-2">
+            <div class="stat-item"><span id="stat-obj-stars" class="stat-val">0</span><span class="stat-lbl">STARS</span></div>
+            <div class="stat-item"><span id="stat-obj-planets" class="stat-val">0</span><span class="stat-lbl">PLANETS</span></div>
+            <div class="stat-item"><span id="stat-obj-ast" class="stat-val">0</span><span class="stat-lbl">ASTEROIDS</span></div>
+            <div class="stat-item"><span id="stat-obj-shooting" class="stat-val">0</span><span class="stat-lbl">SHOOTING STARS</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAYER PROFILE / HOLOGRAPHIC CARD VIEW -->
+    <section id="view-profile" class="view">
+      <div class="screen-header">
+        <button class="back-btn" data-back="view-stats">«</button>
+        <h2>PILOT PROFILE</h2>
+        <div class="spacer-44"></div>
+      </div>
+      <div class="scroll-content centered-col">
+        <div class="holo-card" id="holo-card">
+          <div class="scanlines"></div>
+          <canvas id="profile-ship-canvas" width="120" height="120"></canvas>
+          <div class="holo-rank-area">
+            <div id="profile-rank-title" class="rank-title">Star Cadet</div>
+            <div id="profile-rank-bar-wrap" class="rank-bar-wrap">
+              <div id="profile-rank-bar" class="rank-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="flip-card" class="flip-card">
+          <div class="flip-card-inner" id="flip-card-inner">
+            <!-- FRONT -->
+            <div class="flip-face flip-front">
+              <div class="pilot-name-row">
+                <span id="pilot-name-display" class="pilot-name">Pilot</span>
+                <input id="pilot-name-input" type="text" maxlength="20" class="pilot-name-input hidden" placeholder="Enter Name" />
+                <button id="btn-edit-name" class="icon-mini-btn" title="Edit Name">✎</button>
+                <span class="tap-hint">Tap to flip</span>
+              </div>
+              <div class="profile-rows">
+                <div class="p-row"><span>First Flight</span><span id="p-first-date">No flights yet</span></div>
+                <div class="p-row"><span>Total Flight Time</span><span id="p-total-time">0h 0m 0s</span></div>
+                <div class="p-row"><span>Total Flights</span><span id="p-total-runs">0</span></div>
+                <div class="p-row"><span>Total Distance</span><span id="p-total-dist">0</span></div>
+                <div class="p-row"><span>Average Distance</span><span id="p-avg-dist">0</span></div>
+                <div class="p-row"><span>Lifetime Points</span><span id="p-life-pts">0</span></div>
+              </div>
+            </div>
+            <!-- BACK -->
+            <div class="flip-face flip-back">
+              <div class="pilot-name-row">
+                <span class="pilot-name">SHIP SYSTEMS</span>
+                <span class="tap-hint">Tap to flip</span>
+              </div>
+              <div class="sys-bars">
+                <div class="sys-item">
+                  <div class="p-row"><span>Fuel Capacity</span><span id="sys-fuel-lbl">Level 1/5</span></div>
+                  <div class="sys-track"><div id="sys-fuel-fill" class="sys-fill"></div></div>
+                </div>
+                <div class="sys-item">
+                  <div class="p-row"><span>Shield Strength</span><span id="sys-shield-lbl">Level 1/5</span></div>
+                  <div class="sys-track"><div id="sys-shield-fill" class="sys-fill"></div></div>
+                </div>
+                <div class="sys-item">
+                  <div class="p-row"><span>Weapon Power</span><span id="sys-weapon-lbl">Level 1/5</span></div>
+                  <div class="sys-track"><div id="sys-weapon-fill" class="sys-fill"></div></div>
+                </div>
+                <div class="sys-item">
+                  <div class="p-row"><span>Thruster Speed</span><span id="sys-thruster-lbl">Level 1/5</span></div>
+                  <div class="sys-track"><div id="sys-thruster-fill" class="sys-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- UPGRADES VIEW -->
+    <section id="view-upgrades" class="view">
+      <div class="screen-header">
+        <button class="back-btn" data-back="view-menu">«</button>
+        <h2>UPGRADES</h2>
+        <div class="spacer-44"></div>
+      </div>
+      <div class="points-banner"><span id="upgrades-points">0 pts</span></div>
+
+      <div class="category-tabs">
+        <button class="cat-tab active" data-cat="fuel" style="--cat-color: #2ecc71;">⛽</button>
+        <button class="cat-tab" data-cat="shields" style="--cat-color: #3498db;">🛡️</button>
+        <button class="cat-tab" data-cat="weapons" style="--cat-color: #9b59b6;">🔥</button>
+        <button class="cat-tab" data-cat="thrusters" style="--cat-color: #f1c40f;">⚡</button>
+        <button class="cat-tab" data-cat="customization" style="--cat-color: #e74c3c;">🎨</button>
+      </div>
+
+      <h3 id="upgrade-cat-title" class="cat-title">FUEL</h3>
+      <div id="upgrade-list-container" class="scroll-content"></div>
+    </section>
+
+    <!-- FLIGHT LOGS VIEW -->
+    <section id="view-logs" class="view">
+      <div class="screen-header">
+        <button class="back-btn" data-back="view-menu">«</button>
+        <h2>FLIGHT LOGS</h2>
+        <div class="spacer-44"></div>
+      </div>
+      <div id="logs-container" class="scroll-content logs-list"></div>
+    </section>
+
+    <!-- SETTINGS VIEW -->
+    <section id="view-settings" class="view">
+      <div class="screen-header">
+        <button class="back-btn" data-back="view-menu">«</button>
+        <h2>SETTINGS</h2>
+        <div class="spacer-44"></div>
+      </div>
+      <div class="scroll-content centered-col">
+        <button id="btn-settings-guide" class="guide-hero-btn">
+          <div class="guide-icon">📖</div>
+          <span>PILOT'S GUIDE: READ ME</span>
+        </button>
+
+        <div class="settings-group">
+          <div class="setting-row">
+            <button class="info-btn" data-info="peaceful">ⓘ</button>
+            <span class="setting-label">PEACEFUL</span>
+            <div class="toggle-group">
+              <button id="set-peaceful-off" class="toggle-btn">OFF</button>
+              <button id="set-peaceful-on" class="toggle-btn">ON</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <button class="info-btn" data-info="hardcore">ⓘ</button>
+            <span class="setting-label">HARDCORE</span>
+            <div class="toggle-group">
+              <button id="set-hardcore-off" class="toggle-btn">OFF</button>
+              <button id="set-hardcore-on" class="toggle-btn">ON</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="info-placeholder"></span>
+            <span class="setting-label">MUSIC</span>
+            <div class="toggle-group">
+              <button id="set-music-off" class="toggle-btn">OFF</button>
+              <button id="set-music-on" class="toggle-btn">ON</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="info-placeholder"></span>
+            <span class="setting-label">SFX</span>
+            <div class="toggle-group">
+              <button id="set-sfx-off" class="toggle-btn">OFF</button>
+              <button id="set-sfx-on" class="toggle-btn">ON</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="reset-section">
+          <button id="btn-reset-prompt" class="action-btn red-bg">RESET PROGRESS</button>
+          <div id="reset-confirm-box" class="reset-confirm hidden">
+            <h4>Are you sure?</h4>
+            <p>This will reset all progress and cannot be undone.</p>
+            <div class="confirm-btns">
+              <button id="btn-reset-confirm" class="pill-btn red">Reset</button>
+              <button id="btn-reset-cancel" class="pill-btn gray">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode Info Modal -->
+      <div id="info-modal" class="overlay hidden">
+        <div class="info-card">
+          <h3 id="info-modal-title">Mode</h3>
+          <p id="info-modal-desc"></p>
+          <button id="btn-info-dismiss" class="continue-btn">Dismiss</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PILOT'S GUIDE VIEW -->
+    <section id="view-guide" class="view">
+      <div class="screen-header">
+        <button id="btn-guide-back" class="back-btn">«</button>
+        <h2>PILOT'S GUIDE</h2>
+        <div class="spacer-44"></div>
+      </div>
+      <div id="guide-page-container" class="guide-body"></div>
+      <div class="guide-footer">
+        <button id="btn-guide-prev" class="guide-nav-btn">‹ PREV</button>
+        <div id="guide-dots" class="guide-dots"></div>
+        <button id="btn-guide-next" class="guide-nav-btn">NEXT ›</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/logs.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
