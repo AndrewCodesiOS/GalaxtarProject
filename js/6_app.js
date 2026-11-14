@@ -216,7 +216,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // Directly pull whatever locked name the user set
     const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
 
     if (grid) {
@@ -229,7 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Only submit if it's a new personal record or qualifies as a high score
+    // Submit score to Firebase if it's not a peaceful run and has distance
     if (!res.isPeaceful && res.distance > 0) {
       submitScore(finalName, res.distance);
     }
@@ -306,7 +305,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("sys-thruster-lbl").innerText = `Level ${d.thrusterLevel}/5`;
     document.getElementById("sys-thruster-fill").style.width = `${(d.thrusterLevel / 5) * 100}%`;
 
-    // Rank evaluation
     let currentRank = GALAXTAR_DATA.ranks[0];
     for (const r of GALAXTAR_DATA.ranks) {
       if (d.lifetimePointsEarned >= r.minPoints) currentRank = r;
@@ -636,77 +634,80 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSettingsGuide = document.getElementById("btn-settings-guide");
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
 
-  // Leaderboard Integration (High-Score Only to Save Quota)
-  const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
+  // ==========================================
+  // FIREBASE REALTIME DATABASE LEADERBOARD
+  // ==========================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyBJft7-AF2YCNjxOMe43DLRYyv9CORBSzs",
+    authDomain: "galaxtar-leaderboard.firebaseapp.com",
+    databaseURL: "https://galaxtar-leaderboard-default-rtdb.firebaseio.com",
+    projectId: "galaxtar-leaderboard",
+    storageBucket: "galaxtar-leaderboard.firebasestorage.app",
+    messagingSenderId: "293499450142",
+    appId: "1:293499450142:web:d8ac8b79c06bcf7f634f0f"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const dbRef = firebase.database().ref("leaderboard");
 
   async function submitScore(pilotName, distance) {
     try {
-      // 1. Check against local personal best first to save requests
-      const currentLongest = stats.data.longestFlight || 0;
-      if (distance <= currentLongest) {
-        return; // Skip submission if it's not a personal best
-      }
-
-      // 2. Double-check against top leaderboard scores to ensure it qualifies
-      const response = await fetch(`${SHEETDB_API}?sort_by=distance&sort_order=desc&limit=10`);
-      const data = await response.json();
-
-      if (data && Array.isArray(data) && data.length >= 10) {
-        const lowestTopScore = Number(data[data.length - 1].distance || 0);
-        if (distance <= lowestTopScore) {
-          return; // Skip submission if it doesn't beat the bottom of the top 10
-        }
-      }
-
-      // 3. Post only if it's a qualifying high score
-      await fetch(SHEETDB_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: [{
-            name: pilotName,
-            distance: distance,
-            date: new Date().toLocaleDateString()
-          }]
-        })
+      // Push every valid run immediately to Firebase so scores populate cleanly
+      const newScoreRef = dbRef.push();
+      await newScoreRef.set({
+        name: pilotName,
+        distance: distance,
+        date: new Date().toLocaleDateString(),
+        timestamp: firebase.database.ServerValue.TIMESTAMP
       });
     } catch (err) {
-      console.error("Failed to upload score:", err);
+      console.error("Failed to upload score to Firebase:", err);
     }
   }
 
   async function loadLeaderboard() {
     const container = document.getElementById("leaderboard-list");
     if (!container) return;
-    container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">Synchronizing...</p>`;
+    container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">Synchronizing with galactic telemetry...</p>`;
 
     try {
-      const response = await fetch(`${SHEETDB_API}?sort_by=distance&sort_order=desc&limit=10`);
-      const data = await response.json();
+      dbRef.orderByChild("distance").limitToLast(10).once("value", snapshot => {
+        const scores = [];
+        snapshot.forEach(childSnapshot => {
+          scores.push(childSnapshot.val());
+        });
 
-      if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">No flight records found yet.</p>`;
-        return;
-      }
+        // Firebase limitToLast returns ascending order; reverse to show highest distance first
+        scores.reverse();
 
-      let html = `
-        <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #3498db; max-width: 600px; margin: 0 auto;">
-          <span>RANK & PILOT</span>
-          <span>DISTANCE</span>
-        </div>
-      `;
+        if (scores.length === 0) {
+          container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">No flight records found yet.</p>`;
+          return;
+        }
 
-      data.forEach((row, index) => {
-        const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        html += `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
-            <span>#${index + 1} ${safeName}</span>
-            <span style="font-weight: bold; color: #2ecc71;">${row.distance} m</span>
+        let html = `
+          <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #3498db; max-width: 600px; margin: 0 auto;">
+            <span>RANK & PILOT</span>
+            <span>DISTANCE</span>
           </div>
         `;
-      });
 
-      container.innerHTML = html;
+        scores.forEach((row, index) => {
+          const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
+              <span>#${index + 1} ${safeName}</span>
+              <span style="font-weight: bold; color: #2ecc71;">${row.distance} m</span>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      }, error => {
+        throw error;
+      });
     } catch (err) {
       container.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">Failed to connect to galactic server.</p>`;
     }
