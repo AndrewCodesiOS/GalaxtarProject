@@ -18,6 +18,28 @@ document.addEventListener("DOMContentLoaded", () => {
     result => showGameOver(result)
   );
 
+  // Check if pilot name is empty; if so, show mandatory intro modal
+  const introModal = document.getElementById("intro-modal");
+  const introNameInput = document.getElementById("intro-name-input");
+  const btnIntroStart = document.getElementById("btn-intro-start");
+
+  if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
+    if (introModal) introModal.classList.remove("hidden");
+  }
+
+  if (btnIntroStart && introNameInput) {
+    btnIntroStart.addEventListener("click", () => {
+      const nameVal = introNameInput.value.trim();
+      if (!nameVal) {
+        alert("Please enter a valid pilot name to continue.");
+        return;
+      }
+      stats.data.pilotName = nameVal;
+      stats.save();
+      if (introModal) introModal.classList.add("hidden");
+    });
+  }
+
   function showView(viewId) {
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
     const target = document.getElementById(viewId);
@@ -91,6 +113,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
     btnLaunch.addEventListener("click", () => {
+      // Double check name is set before launch
+      if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
+        if (introModal) introModal.classList.remove("hidden");
+        return;
+      }
       showView("view-explore");
       gameEngine.startSession();
     });
@@ -180,8 +207,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // Read directly from permanent saved stats
-    let finalName = stats.data.pilotName.trim();
+    // Directly pull whatever locked name the user set
+    const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
 
     if (grid) {
       grid.innerHTML = `
@@ -193,15 +220,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score to SheetDB
+    // Submit score directly using the user's custom name
     if (!res.isPeaceful && res.distance > 0) {
-      if (!finalName || finalName.toLowerCase() === "pilot") {
-        if (!stats.data.pilotId) {
-          stats.data.pilotId = Math.floor(1000 + Math.random() * 9000);
-          stats.save();
-        }
-        finalName = `Pilot #${stats.data.pilotId}`;
-      }
       submitScore(finalName, res.distance);
     }
   }
@@ -642,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       data.forEach((row, index) => {
-        const safeName = (row.name || "Pilot").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
             <span>#${index + 1} ${safeName}</span>
