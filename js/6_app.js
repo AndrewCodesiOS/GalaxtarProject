@@ -179,6 +179,11 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
     if (overlay) overlay.classList.remove("hidden");
+
+    // Submit score when flight completes
+    if (!res.isPeaceful && res.distance > 0) {
+      submitScore(stats.data.pilotName, res.distance);
+    }
   }
 
   function updateStatsDisplay() {
@@ -571,10 +576,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
   const btnPauseGuide = document.getElementById("btn-pause-guide");
   if (btnPauseGuide) btnPauseGuide.addEventListener("click", openGuide);
-});
 
-
-  // Leaderboard Integration
+  // Leaderboard Integration (Now properly scoped inside DOMContentLoaded)
   const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
 
   async function submitScore(pilotName, distance) {
@@ -639,3 +642,4 @@ document.addEventListener("DOMContentLoaded", () => {
       showView("view-leaderboard");
     });
   }
+});
