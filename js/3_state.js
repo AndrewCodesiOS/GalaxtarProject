@@ -1,8 +1,7 @@
 class StatsStore {
   constructor() {
     this.defaultData = {
-      pilotName: "Pilot",
-      pilotId: null,
+      pilotName: "",
       currentFuel: 200,
       fuelLevel: 1,
       shieldLevel: 1,
@@ -10,7 +9,7 @@ class StatsStore {
       thrusterLevel: 1,
       selectedShipColor: "#2ecc71",
       selectedShipShape: "triangle",
-      totalPoints: 500,
+      totalPoints: 20000,
       lifetimePointsEarned: 500,
       longestFlight: 0,
       totalRuns: 0,
