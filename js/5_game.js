@@ -82,9 +82,6 @@ class ExploreGameEngine {
         e.preventDefault();
         if (!this.stats.data.isPeacefulMode) this.shoot();
       }
-      if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
-        if (this.isRunning && !this.isPaused && !this.isGameOver) this.toggleBoost();
-      }
     });
     window.addEventListener("keyup", e => {
       this.keys[e.code] = false;
@@ -225,7 +222,6 @@ class ExploreGameEngine {
     this.isPaused = false;
     this.isGameOver = false;
     this.isManualEnd = false;
-    this.isBoostActive = false;
     this.isInvulnerable = false;
     this.invulnTimer = 0;
     this.regenTimer = 0;
@@ -264,12 +260,6 @@ class ExploreGameEngine {
 
   stop() {
     this.isRunning = false;
-  }
-
-  toggleBoost() {
-    if (this.stats.data.thrusterLevel < 2) return;
-    if (this.stats.data.currentFuel <= 0 && !this.stats.data.isPeacefulMode) return;
-    this.isBoostActive = !this.isBoostActive;
   }
 
   shoot() {
@@ -453,15 +443,17 @@ class ExploreGameEngine {
   update(dt) {
     const d = this.stats.data;
     const thrusterInfo = GALAXTAR_DATA.thrusterLevels[d.thrusterLevel - 1];
-    if (this.isBoostActive && d.currentFuel <= 0 && !d.isPeacefulMode) {
-      this.isBoostActive = false;
-    }
+    
+    // Passive distance multiplier from thruster upgrade level
+    const passiveDistanceMultiplier = thrusterInfo.speedMultiplier;
 
-    const speedMult = this.isBoostActive ? thrusterInfo.speedMultiplier : 1.0;
+    // Gameplay and obstacles remain at steady normal speed
+    const speedMult = 1.0;
 
     if (!this.isGameOver) {
       this.elapsedTime += dt;
-      this.distance += 220 * speedMult * dt;
+      // Distance accumulates faster based on the passive thruster upgrade
+      this.distance += 220 * passiveDistanceMultiplier * dt;
 
       const moveSpeed = 360;
       if (d.currentFuel > 0 || d.isPeacefulMode) {
@@ -493,8 +485,7 @@ class ExploreGameEngine {
       if (!d.isPeacefulMode) {
         if (this.distance - this.lastFuelDeductDist >= 1500) {
           const baseCost = d.isHardcoreMode ? 4 : 2;
-          const cost = this.isBoostActive ? Math.max(1, Math.floor(baseCost / 2)) : baseCost;
-          this.stats.consumeFuel(cost);
+          this.stats.consumeFuel(baseCost);
           this.lastFuelDeductDist = this.distance;
         }
         if (this.distance - this.lastSolarChargeDist >= 6000) {
@@ -602,7 +593,7 @@ class ExploreGameEngine {
       this.spawnEnemy();
     }
 
-    const enemySpeedMult = this.isBoostActive ? Math.min(1 + (speedMult - 1) * 0.15, 1.5) : 1.0;
+    const enemySpeedMult = 1.0;
     this.enemies = this.enemies.filter(e => {
       if (d.isPeacefulMode) {
         e.y += 150 * enemySpeedMult * dt;
@@ -712,7 +703,7 @@ class ExploreGameEngine {
           consumed = true;
 
           if (e.hp <= 0) {
-            const pts = this.isBoostActive ? e.points * 2 : e.points;
+            const pts = e.points;
             this.sessionShips++;
             if (!d.isPeacefulMode) this.sessionPoints += pts;
             this.audio.playExplosion(false);
@@ -750,7 +741,7 @@ class ExploreGameEngine {
           e.hp -= b.damage;
           consumed = true;
           if (e.hp <= 0) {
-            const pts = this.isBoostActive ? e.points * 2 : e.points;
+            const pts = e.points;
             this.sessionShips++;
             if (!d.isPeacefulMode) this.sessionPoints += pts;
             this.audio.playExplosion(false);
@@ -787,7 +778,7 @@ class ExploreGameEngine {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       if (hitBox(e.x, e.y, e.w * 0.85, e.h * 0.85, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
-        const pts = this.isBoostActive ? e.points * 2 : e.points;
+        const pts = e.points;
         this.sessionShips++;
         if (!d.isPeacefulMode) this.sessionPoints += pts;
         this.spawnExplosion(e.x, e.y, e.color, 24);
