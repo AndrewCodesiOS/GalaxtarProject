@@ -9,7 +9,7 @@ class StatsStore {
       thrusterLevel: 1,
       selectedShipColor: "#2ecc71",
       selectedShipShape: "triangle",
-      totalPoints: 50000,
+      totalPoints: 250,
       lifetimePointsEarned: 500,
       longestFlight: 0,
       totalRuns: 0,
