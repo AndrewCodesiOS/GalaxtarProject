@@ -1,3 +1,21 @@
+That explains it completely! In the else branch of setToggleState, we accidentally wrote offBtn.classList.remove("active") instead of removing the active class from onBtn. Because of that, the OFF button never stayed highlighted, and the ON button never lost its highlight when switched off.
+Here is the fully corrected setToggleState function:
+  function setToggleState(idPrefix, val) {
+    const offBtn = document.getElementById(`${idPrefix}-off`);
+    const onBtn = document.getElementById(`${idPrefix}-on`);
+    if (offBtn && onBtn) {
+      if (val) {
+        offBtn.classList.remove("active");
+        onBtn.classList.add("active");
+      } else {
+        offBtn.classList.add("active");
+        onBtn.classList.remove("active");
+      }
+    }
+  }
+
+Complete Updated 6_app.js
+Here is your entire, fully corrected 6_app.js file with this fix applied. Paste this into your project, and every toggle (Peaceful, Hardcore, Music, and SFX) will visually light up and clear precisely as intended:
 document.addEventListener("DOMContentLoaded", () => {
   // Register Service Worker for PWA Installation
   if ("serviceWorker" in navigator) {
@@ -498,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
         onBtn.classList.add("active");
       } else {
         offBtn.classList.add("active");
-        offBtn.classList.remove("active");
+        onBtn.classList.remove("active");
       }
     }
   }
@@ -720,3 +738,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
