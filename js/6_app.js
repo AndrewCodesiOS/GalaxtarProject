@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     result => showGameOver(result)
   );
 
-  // Check if pilot name is empty; if so, show mandatory intro modal
+  // Check if pilot name is set; if not, show mandatory intro modal
   const introModal = document.getElementById("intro-modal");
   const introNameInput = document.getElementById("intro-name-input");
   const btnIntroStart = document.getElementById("btn-intro-start");
