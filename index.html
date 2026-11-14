@@ -14,14 +14,14 @@
     <!-- INTRO NAME ENTRY MODAL (First Time / Mandatory) -->
     <div id="intro-modal" class="overlay hidden">
       <div class="gameover-card" style="text-align: center;">
-        <h2 style="color: #3498db; letter-spacing: 2px;">WELCOME, PILOT</h2>
+        <h2 style="color: #00f0ff; letter-spacing: 2px;">WELCOME, PILOT</h2>
         <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5;">
           You pilot a deep-space research vessel through an endless cosmic expanse.<br><br>
           Travel as far as you can, destroy incoming asteroids and hostile ships, collect points, and upgrade your ship!<br><br>
           <strong>Enter your Pilot Name to begin:</strong>
         </p>
-        <input id="intro-name-input" type="text" maxlength="20" class="pilot-name-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.6); border: 1px solid #3498db; color: #fff; border-radius: 6px; font-family: monospace; font-size: 1.1rem; text-align: center;" placeholder="Your Pilot Name" />
-        <button id="btn-intro-start" class="continue-btn" style="background: #2ecc71; color: #000; font-weight: bold; margin-top: 8px;">SET NAME & BEGIN</button>
+        <input id="intro-name-input" type="text" maxlength="20" class="pilot-name-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.6); border: 1px solid #00f0ff; color: #fff; border-radius: 6px; font-family: monospace; font-size: 1.1rem; text-align: center;" placeholder="Your Pilot Name" />
+        <button id="btn-intro-start" class="continue-btn" style="background: #00f0ff; color: #000; font-weight: bold; margin-top: 8px;">SET NAME & BEGIN</button>
       </div>
     </div>
 
@@ -50,12 +50,8 @@
         <div class="menu-buttons">
           <button id="btn-launch" class="menu-btn green">LAUNCH</button>
           <button id="btn-stats" class="menu-btn blue">STATS</button>
-          <button id="btn-leaderboard" class="menu-btn orange" style="background: #e67e22; color: #fff;">LEADERBOARD</button>
+          <button id="btn-leaderboard" class="menu-btn yellow" style="background: rgba(200, 200, 200, 0.1); border-color: #00f0ff; color: #00f0ff;">LEADERBOARD</button>
           <button id="btn-upgrades" class="menu-btn purple">UPGRADES</button>
-          <button id="btn-logs" class="menu-btn yellow">
-            FLIGHT LOGS
-            <span id="unread-badge" class="unread-badge hidden">!</span>
-          </button>
           <button id="btn-settings" class="menu-btn red">SETTINGS</button>
         </div>
       </div>
@@ -74,7 +70,7 @@
         <div class="gameover-card">
           <h2>FLIGHT STATS</h2>
           <div id="gameover-grid" class="gameover-grid"></div>
-          <button id="btn-gameover-leaderboard" class="continue-btn" style="background: #e67e22; color: #fff;">LEADERBOARD</button>
+          <button id="btn-gameover-leaderboard" class="continue-btn" style="background: #00f0ff; color: #000;">LEADERBOARD</button>
           <button id="btn-continue" class="continue-btn">TAP TO CONTINUE</button>
         </div>
       </div>
@@ -122,7 +118,11 @@
       <div class="screen-header">
         <button class="back-btn" data-back="view-menu">«</button>
         <h2>STATS</h2>
-        <button id="btn-player-profile" class="profile-circle-btn" title="Pilot Profile">PROFILE</button>
+        <button id="btn-player-profile" class="profile-circle-btn" title="Pilot Profile">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+        </button>
       </div>
       <div class="scroll-content">
         <div class="stat-box">
@@ -182,9 +182,9 @@
             <!-- FRONT -->
             <div class="flip-face flip-front">
               <div class="pilot-name-row" style="flex-direction: column; align-items: stretch; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
-                <label style="font-size: 0.75rem; color: #3498db; text-transform: uppercase; letter-spacing: 1px;">Pilot Call / Leaderboard Name</label>
+                <label style="font-size: 0.75rem; color: #00f0ff; text-transform: uppercase; letter-spacing: 1px;">Pilot Call / Leaderboard Name</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                  <input id="pilot-name-input" type="text" maxlength="20" class="pilot-name-input" style="flex: 1; width: auto; background: rgba(0,0,0,0.6); border: 1px solid #3498db; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 1rem;" placeholder="Enter Name" />
+                  <input id="pilot-name-input" type="text" maxlength="20" class="pilot-name-input" style="flex: 1; width: auto; background: rgba(0,0,0,0.6); border: 1px solid #00f0ff; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 1rem;" placeholder="Enter Name" />
                   <button id="btn-save-name" class="pill-btn green" style="padding: 8px 14px;">Save</button>
                 </div>
                 <span class="tap-hint" style="text-align: right;">Tap card to flip for ship systems</span>
@@ -238,25 +238,15 @@
       <div class="points-banner"><span id="upgrades-points">0 pts</span></div>
 
       <div class="category-tabs">
-        <button class="cat-tab active" data-cat="fuel" style="--cat-color: #2ecc71;">FUEL</button>
+        <button class="cat-tab active" data-cat="fuel" style="--cat-color: #00f0ff;">FUEL</button>
         <button class="cat-tab" data-cat="shields" style="--cat-color: #3498db;">SHIELDS</button>
-        <button class="cat-tab" data-cat="weapons" style="--cat-color: #9b59b6;">WEAPONS</button>
-        <button class="cat-tab" data-cat="thrusters" style="--cat-color: #f1c40f;">BOOST</button>
-        <button class="cat-tab" data-cat="customization" style="--cat-color: #e74c3c;">SHIP</button>
+        <button class="cat-tab" data-cat="weapons" style="--cat-color: #aaa;">WEAPONS</button>
+        <button class="cat-tab" data-cat="thrusters" style="--cat-color: #00f0ff;">BOOST</button>
+        <button class="cat-tab" data-cat="customization" style="--cat-color: #fff;">SHIP</button>
       </div>
 
       <h3 id="upgrade-cat-title" class="cat-title">FUEL</h3>
       <div id="upgrade-list-container" class="scroll-content"></div>
-    </section>
-
-    <!-- FLIGHT LOGS VIEW -->
-    <section id="view-logs" class="view">
-      <div class="screen-header">
-        <button class="back-btn" data-back="view-menu">«</button>
-        <h2>FLIGHT LOGS</h2>
-        <div class="spacer-44"></div>
-      </div>
-      <div id="logs-container" class="scroll-content logs-list"></div>
     </section>
 
     <!-- SETTINGS VIEW -->
@@ -366,7 +356,6 @@
   <script src="js/1_data.js"></script>
   <script src="js/2_audio.js"></script>
   <script src="js/3_state.js"></script>
-  <script src="js/4_logs.js"></script>
   <script src="js/5_game.js"></script>
   <script src="js/6_app.js"></script>
 </body>
