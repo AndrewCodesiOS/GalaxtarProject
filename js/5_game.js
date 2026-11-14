@@ -1062,14 +1062,14 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
-    // Draw live distance telemetry on screen
+    // Draw live distance telemetry on top left
     ctx.save();
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 16px monospace";
-    ctx.textAlign = "center";
+    ctx.textAlign = "left";
     ctx.shadowColor = "#3498db";
     ctx.shadowBlur = 8;
-    ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, this.canvas.width / 2, 35);
+    ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
   }
 }
