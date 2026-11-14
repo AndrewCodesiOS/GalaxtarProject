@@ -220,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score directly using the user's custom name
+    // Only submit if it's a new personal record or qualifies as a high score
     if (!res.isPeaceful && res.distance > 0) {
       submitScore(finalName, res.distance);
     }
@@ -617,11 +617,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSettingsGuide = document.getElementById("btn-settings-guide");
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
 
-  // Leaderboard Integration
+  // Leaderboard Integration (High-Score Only to Save Quota)
   const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
 
   async function submitScore(pilotName, distance) {
     try {
+      // 1. Check against local personal best first to save requests
+      const currentLongest = stats.data.longestFlight || 0;
+      if (distance <= currentLongest) {
+        return; // Skip submission if it's not a personal best
+      }
+
+      // 2. Double-check against top leaderboard scores to ensure it qualifies
+      const response = await fetch(`${SHEETDB_API}?sort_by=distance&sort_order=desc&limit=10`);
+      const data = await response.json();
+
+      if (data && Array.isArray(data) && data.length >= 10) {
+        const lowestTopScore = Number(data[data.length - 1].distance || 0);
+        if (distance <= lowestTopScore) {
+          return; // Skip submission if it doesn't beat the bottom of the top 10
+        }
+      }
+
+      // 3. Post only if it's a qualifying high score
       await fetch(SHEETDB_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
