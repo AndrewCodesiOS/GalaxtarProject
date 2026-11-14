@@ -1072,4 +1072,45 @@ class ExploreGameEngine {
     ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
   }
+    // Draw live distance telemetry on top left
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 16px monospace";
+    ctx.textAlign = "left";
+    ctx.shadowColor = "#3498db";
+    ctx.shadowBlur = 8;
+    ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
+    ctx.restore();
+
+    // Draw live fuel gauge on bottom right
+    const currentFuel = Math.floor(this.stats.data.currentFuel);
+    const maxFuel = this.stats.maxFuel();
+    const fuelPercent = Math.max(0, Math.min(1, currentFuel / maxFuel));
+    
+    const barWidth = 140;
+    const barHeight = 14;
+    const barX = this.canvas.width - barWidth - 25;
+    const barY = this.canvas.height - 35;
+
+    ctx.save();
+    // Background track
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.strokeStyle = "#00f0ff";
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = "#00f0ff";
+    ctx.shadowBlur = 6;
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+    // Fuel fill
+    ctx.fillStyle = fuelPercent > 0.25 ? "#00f0ff" : "#e74c3c";
+    ctx.fillRect(barX + 2, barY + 2, (barWidth - 4) * fuelPercent, barHeight - 4);
+
+    // Fuel text label
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 11px monospace";
+    ctx.textAlign = "right";
+    ctx.shadowBlur = 4;
+    ctx.fillText(`FUEL: ${currentFuel}/${maxFuel}`, barX - 10, barY + 11);
+    ctx.restore();
 }
