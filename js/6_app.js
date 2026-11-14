@@ -1,3 +1,4 @@
+Here is your fully updated 6_app.js file with the pause menu updated to show live current flight stats, working audio toggles with active state indicators, and the guide button cleanly removed from the pause view:
 document.addEventListener("DOMContentLoaded", () => {
   const audio = new AudioController();
   const stats = new StatsStore();
@@ -166,6 +167,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnPause) {
     btnPause.addEventListener("click", () => {
       gameEngine.pause();
+      
+      // Populate live pause stats
+      document.getElementById("pause-stat-dist").innerText = Math.floor(gameEngine.distance || 0);
+      document.getElementById("pause-stat-ships").innerText = gameEngine.sessionShips || 0;
+      document.getElementById("pause-stat-ast").innerText = gameEngine.sessionAsteroids || 0;
+      document.getElementById("pause-stat-pts").innerText = gameEngine.sessionPoints || 0;
+
+      // Update toggle visual state indicators
+      setToggleState("pause-music", stats.data.musicOn);
+      setToggleState("pause-sfx", stats.data.sfxOn);
+
       showView("view-pause");
     });
   }
@@ -471,7 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Settings Toggles & Reset
+  // Settings & Pause Toggles & Reset
   function updateSettingsDisplay() {
     const d = stats.data;
     setToggleState("set-peaceful", d.isPeacefulMode);
@@ -519,6 +531,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setupToggle("set-hardcore", "isHardcoreMode");
   setupToggle("set-music", "musicOn", val => { audio.setMusicEnabled(val); });
   setupToggle("set-sfx", "sfxOn", val => { audio.sfxEnabled = val; });
+
+  // Bind Pause menu audio toggles
+  setupToggle("pause-music", "musicOn", val => { audio.setMusicEnabled(val); });
+  setupToggle("pause-sfx", "sfxOn", val => { audio.sfxEnabled = val; });
 
   const resetPromptBtn = document.getElementById("btn-reset-prompt");
   const resetConfirmBox = document.getElementById("reset-confirm-box");
@@ -616,8 +632,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnSettingsGuide = document.getElementById("btn-settings-guide");
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
-  const btnPauseGuide = document.getElementById("btn-pause-guide");
-  if (btnPauseGuide) btnPauseGuide.addEventListener("click", openGuide);
 
   // Leaderboard Integration
   const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
@@ -685,3 +699,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
