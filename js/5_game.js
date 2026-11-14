@@ -90,6 +90,9 @@ class ExploreGameEngine {
     const onDown = e => {
       if (!this.isRunning || this.isGameOver || this.isPaused) return;
       if (e.target.closest(".hud-btn")) return;
+      if (e.cancelable) {
+        e.preventDefault();
+      }
 
       if (e.touches) {
         for (let i = 0; i < e.changedTouches.length; i++) {
@@ -161,8 +164,8 @@ class ExploreGameEngine {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
 
-    this.canvas.addEventListener("touchstart", onDown, { passive: true });
-    window.addEventListener("touchmove", onMove, { passive: true });
+    this.canvas.addEventListener("touchstart", onDown, { passive: false });
+    window.addEventListener("touchmove", onMove, { passive: false });
     window.addEventListener("touchend", onUp);
     window.addEventListener("touchcancel", onUp);
   }
