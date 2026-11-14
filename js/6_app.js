@@ -488,7 +488,7 @@ document.addEventListener("DOMContentLoaded", () => {
         offBtn.classList.remove("active");
         onBtn.classList.add("active");
       } else {
-        onBtn.classList.remove("active");
+        offBtn.classList.remove("active");
         offBtn.classList.add("active");
       }
     }
@@ -616,8 +616,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnSettingsGuide = document.getElementById("btn-settings-guide");
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
-  const btnPauseGuide = document.getElementById("btn-pause-guide");
-  if (btnPauseGuide) btnPauseGuide.addEventListener("click", openGuide);
 
   // Leaderboard Integration
   const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
