@@ -517,6 +517,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (onBtn) {
       onBtn.addEventListener("click", () => {
         stats.data[settingKey] = true;
+
+        // Enforce mutual exclusivity between Peaceful and Hardcore modes
+        if (settingKey === "isPeacefulMode") {
+          stats.data.isHardcoreMode = false;
+          setToggleState("set-hardcore", false);
+        } else if (settingKey === "isHardcoreMode") {
+          stats.data.isPeacefulMode = false;
+          setToggleState("set-peaceful", false);
+        }
+
         stats.save();
         setToggleState(idPrefix, true);
         if (onChange) onChange(true);
