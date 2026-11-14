@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function showGameOver(res) {
+    function showGameOver(res) {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     if (grid) {
@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score when flight completes with unique pilot ID tag if default name
+    // Submit score when flight completes with your custom name or pilot ID tag if default
     if (!res.isPeaceful && res.distance > 0) {
       let finalName = stats.data.pilotName.trim();
       if (!finalName || finalName.toLowerCase() === "pilot") {
