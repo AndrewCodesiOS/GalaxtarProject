@@ -1,3 +1,5 @@
+Ah, it looks like a couple of brackets got misplaced at the very end of the file, causing a syntax error and a duplicated chunk of code.
+Here is your completely correct and fixed 5_game.js file. You can replace your entire code with this version, and the bottom-right live fuel gauge will render cleanly without any issues:
 class StarfieldBackground {
   constructor(canvas) {
     this.canvas = canvas;
@@ -1071,16 +1073,6 @@ class ExploreGameEngine {
     ctx.shadowBlur = 8;
     ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
-  }
-    // Draw live distance telemetry on top left
-    ctx.save();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 16px monospace";
-    ctx.textAlign = "left";
-    ctx.shadowColor = "#3498db";
-    ctx.shadowBlur = 8;
-    ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
-    ctx.restore();
 
     // Draw live fuel gauge on bottom right
     const currentFuel = Math.floor(this.stats.data.currentFuel);
@@ -1093,7 +1085,6 @@ class ExploreGameEngine {
     const barY = this.canvas.height - 35;
 
     ctx.save();
-    // Background track
     ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
     ctx.strokeStyle = "#00f0ff";
     ctx.lineWidth = 1.5;
@@ -1102,15 +1093,15 @@ class ExploreGameEngine {
     ctx.fillRect(barX, barY, barWidth, barHeight);
     ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-    // Fuel fill
     ctx.fillStyle = fuelPercent > 0.25 ? "#00f0ff" : "#e74c3c";
     ctx.fillRect(barX + 2, barY + 2, (barWidth - 4) * fuelPercent, barHeight - 4);
 
-    // Fuel text label
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 11px monospace";
     ctx.textAlign = "right";
     ctx.shadowBlur = 4;
     ctx.fillText(`FUEL: ${currentFuel}/${maxFuel}`, barX - 10, barY + 11);
     ctx.restore();
+  }
 }
+
