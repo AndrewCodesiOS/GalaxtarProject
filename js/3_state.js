@@ -1,7 +1,7 @@
 class StatsStore {
   constructor() {
     this.defaultData = {
-      pilotName: "Pilot",
+      pilotName: "",
       pilotId: null,
       currentFuel: 200,
       fuelLevel: 1,
