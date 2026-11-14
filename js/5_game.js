@@ -55,12 +55,11 @@ class StarfieldBackground {
 }
 
 class ExploreGameEngine {
-  constructor(canvas, stats, audio, logManager, onFlightComplete) {
+  constructor(canvas, stats, audio, onFlightComplete) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.stats = stats;
     this.audio = audio;
-    this.logManager = logManager;
     this.onFlightComplete = onFlightComplete;
 
     this.isRunning = false;
@@ -865,12 +864,6 @@ class ExploreGameEngine {
       d.lastSessionPoints = this.sessionPoints;
 
       this.stats.save();
-
-      this.logManager.generateFlightLog({
-        distance: distInt,
-        shipsDestroyed: this.sessionShips,
-        isNewRecord
-      });
     }
 
     this.onFlightComplete({
