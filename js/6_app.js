@@ -167,6 +167,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const btnGameoverLeaderboard = document.getElementById("btn-gameover-leaderboard");
+  if (btnGameoverLeaderboard) {
+    btnGameoverLeaderboard.addEventListener("click", () => {
+      document.getElementById("gameover-overlay").classList.add("hidden");
+      loadLeaderboard();
+      showView("view-leaderboard");
+    });
+  }
+
   function showGameOver(res) {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
@@ -180,9 +189,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score when flight completes
+    // Submit score when flight completes with unique pilot ID tag if default name
     if (!res.isPeaceful && res.distance > 0) {
-      submitScore(stats.data.pilotName, res.distance);
+      let finalName = stats.data.pilotName.trim();
+      if (!finalName || finalName.toLowerCase() === "pilot") {
+        if (!stats.data.pilotId) {
+          stats.data.pilotId = Math.floor(1000 + Math.random() * 9000);
+          stats.save();
+        }
+        finalName = `Pilot #${stats.data.pilotId}`;
+      }
+      submitScore(finalName, res.distance);
     }
   }
 
@@ -577,7 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnPauseGuide = document.getElementById("btn-pause-guide");
   if (btnPauseGuide) btnPauseGuide.addEventListener("click", openGuide);
 
-  // Leaderboard Integration (Now properly scoped inside DOMContentLoaded)
+  // Leaderboard Integration
   const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
 
   async function submitScore(pilotName, distance) {
