@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const audio = new AudioController();
   const stats = new StatsStore();
-  const logManager = new FlightLogController(stats);
 
   audio.musicEnabled = stats.data.musicOn;
   audio.sfxEnabled = stats.data.sfxOn;
@@ -14,7 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
     gameCanvas,
     stats,
     audio,
-    logManager,
     result => showGameOver(result)
   );
 
@@ -113,7 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
     btnLaunch.addEventListener("click", () => {
-      // Double check name is set before launch
       if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
         if (introModal) introModal.classList.remove("hidden");
         return;
@@ -136,14 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnUpgrades.addEventListener("click", () => {
       updateUpgradesDisplay();
       showView("view-upgrades");
-    });
-  }
-
-  const btnLogs = document.getElementById("btn-logs");
-  if (btnLogs) {
-    btnLogs.addEventListener("click", () => {
-      updateLogsDisplay();
-      showView("view-logs");
     });
   }
 
@@ -207,8 +196,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // Directly pull whatever locked name the user set
-    const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
+    let finalName = stats.data.pilotName ? stats.data.pilotName.trim() : "";
+    
+    if (!finalName) {
+      const introInput = document.getElementById("intro-name-input");
+      if (introInput && introInput.value.trim()) {
+        finalName = introInput.value.trim();
+        stats.data.pilotName = finalName;
+        stats.save();
+      } else {
+        finalName = "Pilot";
+      }
+    }
 
     if (grid) {
       grid.innerHTML = `
@@ -220,7 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score directly using the user's custom name
     if (!res.isPeaceful && res.distance > 0) {
       submitScore(finalName, res.distance);
     }
@@ -297,6 +295,53 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("sys-thruster-lbl").innerText = `Level ${d.thrusterLevel}/5`;
     document.getElementById("sys-thruster-fill").style.width = `${(d.thrusterLevel / 5) * 100}%`;
 
+    // Render live customized ship preview on profile canvas
+    const pCanvas = document.getElementById("profile-ship-canvas");
+    if (pCanvas) {
+      const pCtx = pCanvas.getContext("2d");
+      pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+      pCtx.save();
+      pCtx.translate(pCanvas.width / 2, pCanvas.height / 2);
+      
+      const shape = d.selectedShipShape || "triangle";
+      const color = d.selectedShipColor || "#00f0ff";
+      const w = 45, h = 55;
+
+      pCtx.fillStyle = color;
+      pCtx.shadowColor = color;
+      pCtx.shadowBlur = 12;
+      pCtx.beginPath();
+
+      if (shape === "circle") {
+        pCtx.arc(0, 0, w / 2, 0, Math.PI * 2);
+      } else if (shape === "square") {
+        pCtx.rect(-w / 2, -h / 2, w, h);
+      } else if (shape === "diamond") {
+        pCtx.moveTo(0, -h / 2);
+        pCtx.lineTo(w / 2, 0);
+        pCtx.lineTo(0, h / 2);
+        pCtx.lineTo(-w / 2, 0);
+        pCtx.closePath();
+      } else if (shape === "octagon") {
+        const r = w / 2;
+        for (let i = 0; i < 8; i++) {
+          const ang = (i * Math.PI) / 4 + Math.PI / 8;
+          const px = Math.cos(ang) * r;
+          const py = Math.sin(ang) * r;
+          if (i === 0) pCtx.moveTo(px, py);
+          else pCtx.lineTo(px, py);
+        }
+        pCtx.closePath();
+      } else {
+        pCtx.moveTo(0, -h / 2);
+        pCtx.lineTo(w / 2, h / 2);
+        pCtx.lineTo(-w / 2, h / 2);
+        pCtx.closePath();
+      }
+      pCtx.fill();
+      pCtx.restore();
+    }
+
     // Rank evaluation
     let currentRank = GALAXTAR_DATA.ranks[0];
     for (const r of GALAXTAR_DATA.ranks) {
@@ -346,7 +391,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <h4>Level ${lvl.level}: ${lvl.name}</h4>
             <p>Max Fuel: ${lvl.max} ${lvl.solar ? "(Solar Charging)" : ""}</p>
           </div>
-          <div>${owned ? '<span style="color:#2ecc71; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyFuel(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
+          <div>${owned ? '<span style="color:#00f0ff; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyFuel(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
         </div>`;
       });
     } else if (currentUpgradeCat === "shields") {
@@ -359,7 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <h4>Level ${lvl.level}: ${lvl.name}</h4>
             <p>Max HP: ${lvl.maxHP} ${lvl.regen ? "(Regenerates HP)" : ""}</p>
           </div>
-          <div>${owned ? '<span style="color:#2ecc71; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyShield(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
+          <div>${owned ? '<span style="color:#00f0ff; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyShield(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
         </div>`;
       });
     } else if (currentUpgradeCat === "weapons") {
@@ -372,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <h4>Level ${lvl.level}: ${lvl.name}</h4>
             <p>${lvl.desc} ${lvl.bonus || ""}</p>
           </div>
-          <div>${owned ? '<span style="color:#2ecc71; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyWeapon(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
+          <div>${owned ? '<span style="color:#00f0ff; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyWeapon(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
         </div>`;
       });
     } else if (currentUpgradeCat === "thrusters") {
@@ -385,24 +430,24 @@ document.addEventListener("DOMContentLoaded", () => {
             <h4>Level ${lvl.level}: ${lvl.name}</h4>
             <p>Speed Multiplier: ${lvl.speedMultiplier}x ${lvl.trail ? "(Ion Trail)" : ""}</p>
           </div>
-          <div>${owned ? '<span style="color:#2ecc71; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyThruster(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
+          <div>${owned ? '<span style="color:#00f0ff; font-weight:bold;">OWNED</span>' : `<button class="upgrade-btn ${canAfford && next ? 'green' : 'disabled'}" ${!canAfford || !next ? 'disabled' : ''} onclick="buyThruster(${lvl.level}, ${lvl.cost})">${lvl.cost} pts</button>`}</div>
         </div>`;
       });
     } else if (currentUpgradeCat === "customization") {
-      html += `<h4 style="margin-bottom:8px; color:#3498db;">Ship Colors</h4>`;
+      html += `<h4 style="margin-bottom:8px; color:#00f0ff;">Ship Colors</h4>`;
       GALAXTAR_DATA.colors.forEach(c => {
         const selected = d.selectedShipColor === c.hex;
         html += `<div class="upgrade-card">
           <div class="upgrade-info"><h4 style="color:${c.hex};">${c.name}</h4></div>
-          <div>${selected ? '<span style="color:#2ecc71; font-weight:bold;">SELECTED</span>' : `<button class="upgrade-btn green" onclick="selectColor('${c.hex}')">Select</button>`}</div>
+          <div>${selected ? '<span style="color:#00f0ff; font-weight:bold;">SELECTED</span>' : `<button class="upgrade-btn green" onclick="selectColor('${c.hex}')">Select</button>`}</div>
         </div>`;
       });
-      html += `<h4 style="margin:16px 0 8px 0; color:#3498db;">Ship Shapes</h4>`;
+      html += `<h4 style="margin:16px 0 8px 0; color:#00f0ff;">Ship Shapes</h4>`;
       GALAXTAR_DATA.shapes.forEach(s => {
         const selected = d.selectedShipShape === s.id;
         html += `<div class="upgrade-card">
           <div class="upgrade-info"><h4>${s.name}</h4></div>
-          <div>${selected ? '<span style="color:#2ecc71; font-weight:bold;">SELECTED</span>' : `<button class="upgrade-btn green" onclick="selectShape('${s.id}')">Select</button>`}</div>
+          <div>${selected ? '<span style="color:#00f0ff; font-weight:bold;">SELECTED</span>' : `<button class="upgrade-btn green" onclick="selectShape('${s.id}')">Select</button>`}</div>
         </div>`;
       });
     }
@@ -456,19 +501,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateUpgradesDisplay() {
     renderUpgradeList();
-  }
-
-  function updateLogsDisplay() {
-    const container = document.getElementById("logs-container");
-    if (container) {
-      const logs = logManager.getLogs();
-      if (logs.length === 0) {
-        container.innerHTML = `<p style="padding: 20px; text-align: center; color: #777;">No flight logs recorded yet. Complete your first flight!</p>`;
-      } else {
-        container.innerHTML = logs.map(l => `<div style="background: rgba(255,255,255,0.05); padding: 12px; margin-bottom: 10px; border-radius: 6px;"><p style="font-size: 0.9rem; white-space: pre-wrap;">${l.text}</p></div>`).join("");
-      }
-      logManager.markAllRead();
-    }
   }
 
   // Settings Toggles & Reset
@@ -549,7 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const mode = btn.getAttribute("data-info");
       if (mode === "peaceful") {
         infoTitle.innerText = "Peaceful Mode";
-        infoDesc.innerText = "No fuel consumption over distance, no enemies attacking, and infinite exploration. Perfect for reading flight logs and relaxing.";
+        infoDesc.innerText = "No fuel consumption over distance, no enemies attacking, and infinite exploration. Perfect for relaxing.";
       } else if (mode === "hardcore") {
         infoTitle.innerText = "Hardcore Mode";
         infoDesc.innerText = "Double fuel drain, increased enemy spawn rates, and relentless difficulty for veteran pilots.";
@@ -655,18 +687,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       let html = `
-        <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #3498db; max-width: 600px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #00f0ff; max-width: 600px; margin: 0 auto;">
           <span>RANK & PILOT</span>
           <span>DISTANCE</span>
         </div>
       `;
 
       data.forEach((row, index) => {
-        const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const rawName = row.name || row.Name || row.pilotName || row.Pilot || "Unknown";
+        const safeName = rawName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
             <span>#${index + 1} ${safeName}</span>
-            <span style="font-weight: bold; color: #2ecc71;">${row.distance} m</span>
+            <span style="font-weight: bold; color: #00f0ff;">${row.distance || row.Distance || 0} m</span>
           </div>
         `;
       });
