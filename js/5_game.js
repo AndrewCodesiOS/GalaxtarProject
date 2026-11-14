@@ -1072,7 +1072,7 @@ class ExploreGameEngine {
     ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
 
-    // Draw live shield health on bottom left
+    // Draw live shield health on bottom left (with text inside)
     const currentHp = Math.max(0, this.ship.hp);
     const maxHp = this.ship.maxHP;
     const hpPercent = Math.max(0, Math.min(1, currentHp / maxHp));
@@ -1101,7 +1101,7 @@ class ExploreGameEngine {
     ctx.fillText(`SHIELD: ${currentHp}/${maxHp}`, shieldBarX + 10, shieldBarY + 11);
     ctx.restore();
 
-    // Draw live fuel gauge on bottom right
+    // Draw live fuel gauge on bottom right (with text inside)
     const currentFuel = Math.floor(this.stats.data.currentFuel);
     const maxFuel = this.stats.maxFuel();
     const fuelPercent = Math.max(0, Math.min(1, currentFuel / maxFuel));
@@ -1125,9 +1125,9 @@ class ExploreGameEngine {
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 11px monospace";
-    ctx.textAlign = "right";
+    ctx.textAlign = "left";
     ctx.shadowBlur = 4;
-    ctx.fillText(`FUEL: ${currentFuel}/${maxFuel}`, barX - 10, barY + 11);
+    ctx.fillText(`FUEL: ${currentFuel}/${maxFuel}`, barX + 10, barY + 11);
     ctx.restore();
   }
 }
