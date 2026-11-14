@@ -88,10 +88,17 @@
         <div class="spacer-44"></div>
       </div>
       <div class="scroll-content centered-col">
-        <button id="btn-pause-guide" class="guide-hero-btn">
-          <div class="guide-icon">GUIDE</div>
-          <span>PILOT'S GUIDE: READ ME</span>
-        </button>
+        
+        <!-- Live Flight Stats Box -->
+        <div class="stat-box" style="width: 100%; max-width: 450px; margin-bottom: 20px;">
+          <h3>CURRENT FLIGHT STATS</h3>
+          <div class="stat-grid-2">
+            <div class="stat-item"><span id="pause-stat-dist" class="stat-val">0</span><span class="stat-lbl">DISTANCE</span></div>
+            <div class="stat-item"><span id="pause-stat-ships" class="stat-val">0</span><span class="stat-lbl">SHIPS</span></div>
+            <div class="stat-item"><span id="pause-stat-ast" class="stat-val">0</span><span class="stat-lbl">ASTEROIDS</span></div>
+            <div class="stat-item"><span id="pause-stat-pts" class="stat-val">0</span><span class="stat-lbl">POINTS</span></div>
+          </div>
+        </div>
 
         <div class="settings-group">
           <div class="setting-row">
@@ -110,7 +117,7 @@
           </div>
         </div>
 
-        <div class="pause-actions">
+        <div class="pause-actions" style="width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 10px;">
           <button id="btn-resume-flight" class="action-btn green-bg">RESUME FLIGHT</button>
           <button id="btn-end-flight" class="action-btn red-bg">END FLIGHT</button>
         </div>
