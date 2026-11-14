@@ -16,15 +16,14 @@
       <div class="gameover-card" style="text-align: center;">
         <h2 style="color: #3498db; letter-spacing: 2px;">WELCOME, PILOT</h2>
         <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5;">
-          You pilot a deep-space research vessel through an endless cosmic expanse.<br><br>
+          You pilot deep-space research vessel Echo through an endless cosmic expanse.<br><br>
           Travel as far as you can, destroy incoming hostile ships and asteroids, collect points, and upgrade your ship!<br><br>
-          <strong>Enter your Pilot Name to begin:</strong>
+          <strong>Enter your Pilot Call / Leaderboard Name to begin:</strong>
         </p>
         <input id="intro-name-input" type="text" maxlength="20" class="pilot-name-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.6); border: 1px solid #3498db; color: #fff; border-radius: 6px; font-family: monospace; font-size: 1.1rem; text-align: center;" placeholder="Your Pilot Name" />
         <button id="btn-intro-start" class="continue-btn" style="background: #2ecc71; color: #000; font-weight: bold; margin-top: 8px;">SET NAME & LAUNCH</button>
       </div>
     </div>
-
 
     <!-- MAIN MENU VIEW -->
     <section id="view-menu" class="view active">
@@ -53,10 +52,6 @@
           <button id="btn-stats" class="menu-btn blue">STATS</button>
           <button id="btn-leaderboard" class="menu-btn orange" style="background: #e67e22; color: #fff;">LEADERBOARD</button>
           <button id="btn-upgrades" class="menu-btn purple">UPGRADES</button>
-          <button id="btn-logs" class="menu-btn yellow">
-            FLIGHT LOGS
-            <span id="unread-badge" class="unread-badge hidden">!</span>
-          </button>
           <button id="btn-settings" class="menu-btn red">SETTINGS</button>
         </div>
       </div>
@@ -250,16 +245,6 @@
       <div id="upgrade-list-container" class="scroll-content"></div>
     </section>
 
-    <!-- FLIGHT LOGS VIEW -->
-    <section id="view-logs" class="view">
-      <div class="screen-header">
-        <button class="back-btn" data-back="view-menu">«</button>
-        <h2>FLIGHT LOGS</h2>
-        <div class="spacer-44"></div>
-      </div>
-      <div id="logs-container" class="scroll-content logs-list"></div>
-    </section>
-
     <!-- SETTINGS VIEW -->
     <section id="view-settings" class="view">
       <div class="screen-header">
@@ -367,7 +352,6 @@
   <script src="js/1_data.js"></script>
   <script src="js/2_audio.js"></script>
   <script src="js/3_state.js"></script>
-  <script src="js/4_logs.js"></script>
   <script src="js/5_game.js"></script>
   <script src="js/6_app.js"></script>
 </body>
