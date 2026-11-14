@@ -180,18 +180,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // 1. Grab live value directly from the input box on screen if it exists
-    const nameInput = document.getElementById("pilot-name-input");
-    let currentInputName = nameInput ? nameInput.value.trim() : "";
-    
-    // 2. Fall back to stats storage if input is empty
-    let finalName = currentInputName || stats.data.pilotName.trim();
-    
-    // 3. Save it back to stats to keep everything fully synced
-    if (currentInputName) {
-      stats.data.pilotName = currentInputName;
-      stats.save();
-    }
+    // Read directly from permanent saved stats
+    let finalName = stats.data.pilotName.trim();
 
     if (grid) {
       grid.innerHTML = `
@@ -203,9 +193,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // 4. Submit score (Only assign Pilot #XXXX if it's literally default/empty)
+    // Submit score to SheetDB
     if (!res.isPeaceful && res.distance > 0) {
-      if (!finalName || finalName.toLowerCase() === "pilot" || finalName.toLowerCase().startsWith("pilot #")) {
+      if (!finalName || finalName.toLowerCase() === "pilot") {
         if (!stats.data.pilotId) {
           stats.data.pilotId = Math.floor(1000 + Math.random() * 9000);
           stats.save();
@@ -215,7 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
       submitScore(finalName, res.distance);
     }
   }
-
 
   function updateStatsDisplay() {
     const d = stats.data;
@@ -246,51 +235,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const nameDisplay = document.getElementById("pilot-name-display");
   const nameInput = document.getElementById("pilot-name-input");
-  const editNameBtn = document.getElementById("btn-edit-name");
-  
-  if (editNameBtn) {
-    editNameBtn.addEventListener("click", () => {
-      nameDisplay.classList.toggle("hidden");
-      nameInput.classList.toggle("hidden");
-      if (!nameInput.classList.contains("hidden")) {
-        nameInput.value = stats.data.pilotName;
-        nameInput.focus();
-      } else {
-        stats.data.pilotName = nameInput.value.trim() || "Pilot";
-        stats.save();
-        nameDisplay.innerText = stats.data.pilotName;
-      }
-    });
+  const saveNameBtn = document.getElementById("btn-save-name");
+
+  if (nameInput) {
+    nameInput.value = stats.data.pilotName;
   }
 
-  // SAVE ON EVERY KEYSTROKE + BLUR/ENTER TO GUARANTEE PERSISTENCE
-  if (nameInput) {
-    nameInput.addEventListener("input", () => {
-      stats.data.pilotName = nameInput.value.trim() || "Pilot";
-      stats.save();
-      nameDisplay.innerText = stats.data.pilotName;
-    });
-
-    nameInput.addEventListener("blur", () => {
-      stats.data.pilotName = nameInput.value.trim() || "Pilot";
-      stats.save();
-      nameDisplay.innerText = stats.data.pilotName;
-      nameInput.classList.add("hidden");
-      nameDisplay.classList.remove("hidden");
-    });
-
-    nameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        nameInput.blur();
+  if (saveNameBtn && nameInput) {
+    saveNameBtn.addEventListener("click", () => {
+      const newName = nameInput.value.trim();
+      if (newName) {
+        stats.data.pilotName = newName;
+        stats.save();
+        alert(`Pilot name updated to: ${newName}`);
+      } else {
+        alert("Please enter a valid pilot name.");
       }
     });
   }
 
   function updateProfileDisplay() {
     const d = stats.data;
-    if (nameDisplay) nameDisplay.innerText = d.pilotName;
+    if (nameInput) nameInput.value = d.pilotName;
     document.getElementById("p-first-date").innerText = d.firstFlightDate ? new Date(d.firstFlightDate).toLocaleDateString() : "No flights yet";
     const hrs = Math.floor(d.totalTimePlayed / 3600);
     const mins = Math.floor((d.totalTimePlayed % 3600) / 60);
