@@ -55,17 +55,5 @@ const GALAXTAR_DATA = {
     orangeBoss: { health: 18, points: 5, w: 50, h: 50, color: "#f1c40f", shape: "octagon" },
     blueBoss: { health: 24, points: 6, w: 55, h: 55, color: "#3498db", shape: "square" },
     mirrorShip: { health: 16, points: 9, w: 50, h: 60, color: "#ffffff", shape: "mirror" }
-  },
-  storyLogs: [
-    "By now, I've launched—and crashed—more times than I can count.\nEach reset feels a little thinner, a little more… frayed.",
-    "The AI calls the ship Echo. I didn't name it.\nBut it fits. This place is full of echoes.",
-    "Another pilot. Same ship. Same paint.\nBut I swear it had the same scar across the left wing as mine.",
-    "A repeating tone just started in the lower band. It's not noise.\nIt's structured. Rhythmic.",
-    "Something spoke this time. Not the AI.\n\nA voice inside my helmet—not through comms.",
-    "There are gaps in the sky now.\nPlaces where stars bend away like they're avoiding something.",
-    "The enemies no longer feel random.\nThey form patterns. They mimic my routes.",
-    "I disabled a mirror ship today—not destroyed. Disabled.\nI wanted answers.",
-    "Something's shifted.\n\nI used to feel like a shadow chasing light.",
-    "I saw it.\n\nNot with my eyes—but something deeper."
-  ]
+  }
 };
