@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-    function showGameOver(res) {
+  function showGameOver(res) {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
@@ -210,7 +210,6 @@ document.addEventListener("DOMContentLoaded", () => {
       submitScore(finalName, res.distance);
     }
   }
-
 
   function updateStatsDisplay() {
     const d = stats.data;
