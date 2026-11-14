@@ -18,6 +18,28 @@ document.addEventListener("DOMContentLoaded", () => {
     result => showGameOver(result)
   );
 
+  // Check if pilot name is empty; if so, show mandatory intro modal
+  const introModal = document.getElementById("intro-modal");
+  const introNameInput = document.getElementById("intro-name-input");
+  const btnIntroStart = document.getElementById("btn-intro-start");
+
+  if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
+    if (introModal) introModal.classList.remove("hidden");
+  }
+
+  if (btnIntroStart && introNameInput) {
+    btnIntroStart.addEventListener("click", () => {
+      const nameVal = introNameInput.value.trim();
+      if (!nameVal) {
+        alert("Please enter a valid pilot name to continue.");
+        return;
+      }
+      stats.data.pilotName = nameVal;
+      stats.save();
+      if (introModal) introModal.classList.add("hidden");
+    });
+  }
+
   function showView(viewId) {
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
     const target = document.getElementById(viewId);
@@ -91,6 +113,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
     btnLaunch.addEventListener("click", () => {
+      // Double check name is set before launch
+      if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
+        if (introModal) introModal.classList.remove("hidden");
+        return;
+      }
       showView("view-explore");
       gameEngine.startSession();
     });
@@ -180,18 +207,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // 1. Grab live value directly from the input box on screen if it exists
-    const nameInput = document.getElementById("pilot-name-input");
-    let currentInputName = nameInput ? nameInput.value.trim() : "";
-    
-    // 2. Fall back to stats storage if input is empty
-    let finalName = currentInputName || stats.data.pilotName.trim();
-    
-    // 3. Save it back to stats to keep everything fully synced
-    if (currentInputName) {
-      stats.data.pilotName = currentInputName;
-      stats.save();
-    }
+    // Directly pull whatever locked name the user set
+    const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
 
     if (grid) {
       grid.innerHTML = `
@@ -203,19 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // 4. Submit score (Only assign Pilot #XXXX if it's literally default/empty)
+    // Submit score directly using the user's custom name
     if (!res.isPeaceful && res.distance > 0) {
-      if (!finalName || finalName.toLowerCase() === "pilot" || finalName.toLowerCase().startsWith("pilot #")) {
-        if (!stats.data.pilotId) {
-          stats.data.pilotId = Math.floor(1000 + Math.random() * 9000);
-          stats.save();
-        }
-        finalName = `Pilot #${stats.data.pilotId}`;
-      }
       submitScore(finalName, res.distance);
     }
   }
-
 
   function updateStatsDisplay() {
     const d = stats.data;
@@ -246,51 +255,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const nameDisplay = document.getElementById("pilot-name-display");
   const nameInput = document.getElementById("pilot-name-input");
-  const editNameBtn = document.getElementById("btn-edit-name");
-  
-  if (editNameBtn) {
-    editNameBtn.addEventListener("click", () => {
-      nameDisplay.classList.toggle("hidden");
-      nameInput.classList.toggle("hidden");
-      if (!nameInput.classList.contains("hidden")) {
-        nameInput.value = stats.data.pilotName;
-        nameInput.focus();
-      } else {
-        stats.data.pilotName = nameInput.value.trim() || "Pilot";
-        stats.save();
-        nameDisplay.innerText = stats.data.pilotName;
-      }
-    });
+  const saveNameBtn = document.getElementById("btn-save-name");
+
+  if (nameInput) {
+    nameInput.value = stats.data.pilotName;
   }
 
-  // SAVE ON EVERY KEYSTROKE + BLUR/ENTER TO GUARANTEE PERSISTENCE
-  if (nameInput) {
-    nameInput.addEventListener("input", () => {
-      stats.data.pilotName = nameInput.value.trim() || "Pilot";
-      stats.save();
-      nameDisplay.innerText = stats.data.pilotName;
-    });
-
-    nameInput.addEventListener("blur", () => {
-      stats.data.pilotName = nameInput.value.trim() || "Pilot";
-      stats.save();
-      nameDisplay.innerText = stats.data.pilotName;
-      nameInput.classList.add("hidden");
-      nameDisplay.classList.remove("hidden");
-    });
-
-    nameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        nameInput.blur();
+  if (saveNameBtn && nameInput) {
+    saveNameBtn.addEventListener("click", () => {
+      const newName = nameInput.value.trim();
+      if (newName) {
+        stats.data.pilotName = newName;
+        stats.save();
+        alert(`Pilot name updated to: ${newName}`);
+      } else {
+        alert("Please enter a valid pilot name.");
       }
     });
   }
 
   function updateProfileDisplay() {
     const d = stats.data;
-    if (nameDisplay) nameDisplay.innerText = d.pilotName;
+    if (nameInput) nameInput.value = d.pilotName;
     document.getElementById("p-first-date").innerText = d.firstFlightDate ? new Date(d.firstFlightDate).toLocaleDateString() : "No flights yet";
     const hrs = Math.floor(d.totalTimePlayed / 3600);
     const mins = Math.floor((d.totalTimePlayed % 3600) / 60);
@@ -675,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       data.forEach((row, index) => {
-        const safeName = (row.name || "Pilot").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
             <span>#${index + 1} ${safeName}</span>
