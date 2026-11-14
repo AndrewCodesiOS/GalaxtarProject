@@ -10,7 +10,7 @@ class StatsStore {
       selectedShipColor: "#2ecc71",
       selectedShipShape: "triangle",
       totalPoints: 500,
-      lifetimePointsEarned: 500,
+      lifetimePointsEarned: 50000,
       longestFlight: 0,
       totalRuns: 0,
       totalTimePlayed: 0,
