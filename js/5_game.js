@@ -71,6 +71,7 @@ class ExploreGameEngine {
     this.keys = {};
     this.activeTouches = new Map();
     this.shipDragTouchId = null;
+    this.hasMovedDistance = false;
 
     this.bindInputs();
   }
@@ -103,6 +104,7 @@ class ExploreGameEngine {
             this.shipDragTouchId = t.identifier;
             this.shipDragStart = { x: t.clientX, y: t.clientY };
             this.shipStartPos = { x: this.ship.x, y: this.ship.y };
+            this.hasMovedDistance = false;
           } else {
             if (!this.stats.data.isPeacefulMode) this.shoot();
           }
@@ -111,6 +113,7 @@ class ExploreGameEngine {
         this.isMouseDown = true;
         this.mouseDragStart = { x: e.clientX, y: e.clientY };
         this.shipStartPos = { x: this.ship.x, y: this.ship.y };
+        this.hasMovedDistance = false;
         if (!this.stats.data.isPeacefulMode) this.shoot();
       }
     };
@@ -128,6 +131,9 @@ class ExploreGameEngine {
           if (t.identifier === this.shipDragTouchId) {
             const dx = t.clientX - this.shipDragStart.x;
             const dy = t.clientY - this.shipDragStart.y;
+            if (Math.hypot(dx, dy) > 8) {
+              this.hasMovedDistance = true;
+            }
             this.ship.x = Math.max(20, Math.min(this.canvas.width - 20, this.shipStartPos.x + dx));
             this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.shipStartPos.y + dy));
           }
@@ -135,6 +141,9 @@ class ExploreGameEngine {
       } else if (this.isMouseDown) {
         const dx = e.clientX - this.mouseDragStart.x;
         const dy = e.clientY - this.mouseDragStart.y;
+        if (Math.hypot(dx, dy) > 8) {
+          this.hasMovedDistance = true;
+        }
         this.ship.x = Math.max(20, Math.min(this.canvas.width - 20, this.shipStartPos.x + dx));
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.shipStartPos.y + dy));
       }
@@ -144,6 +153,9 @@ class ExploreGameEngine {
       if (e.touches) {
         for (let i = 0; i < e.changedTouches.length; i++) {
           const t = e.changedTouches[i];
+          if (t.identifier === this.shipDragTouchId && !this.hasMovedDistance && !this.stats.data.isPeacefulMode) {
+            this.shoot();
+          }
           this.activeTouches.delete(t.identifier);
           if (t.identifier === this.shipDragTouchId) {
             this.shipDragTouchId = null;
@@ -152,10 +164,14 @@ class ExploreGameEngine {
               this.shipDragTouchId = nextId;
               this.shipDragStart = { x: pos.x, y: pos.y };
               this.shipStartPos = { x: this.ship.x, y: this.ship.y };
+              this.hasMovedDistance = false;
             }
           }
         }
       } else {
+        if (!this.hasMovedDistance && this.isMouseDown && !this.stats.data.isPeacefulMode) {
+          this.shoot();
+        }
         this.isMouseDown = false;
       }
     };
@@ -200,6 +216,7 @@ class ExploreGameEngine {
     this.activeTouches.clear();
     this.shipDragTouchId = null;
     this.isMouseDown = false;
+    this.hasMovedDistance = false;
 
     for (let i = 0; i < 85; i++) {
       this.stars.push({
