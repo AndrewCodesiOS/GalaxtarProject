@@ -11,6 +11,20 @@
     <!-- Persistent Background Starfield -->
     <canvas id="bg-canvas"></canvas>
 
+    <!-- INTRO NAME ENTRY MODAL (First Time / Mandatory) -->
+    <div id="intro-modal" class="overlay hidden">
+      <div class="gameover-card" style="text-align: center;">
+        <h2 style="color: #3498db; letter-spacing: 2px;">WELCOME, PILOT</h2>
+        <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5;">
+          You pilot deep-space research vessel Echo through an endless cosmic expanse.<br><br>
+          Travel as far as you can, destroy incoming hostile ships and asteroids, collect points, and upgrade your ship!<br><br>
+          <strong>Enter your Pilot Call / Leaderboard Name to begin:</strong>
+        </p>
+        <input id="intro-name-input" type="text" maxlength="20" class="pilot-name-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.6); border: 1px solid #3498db; color: #fff; border-radius: 6px; font-family: monospace; font-size: 1.1rem; text-align: center;" placeholder="Your Pilot Name" />
+        <button id="btn-intro-start" class="continue-btn" style="background: #2ecc71; color: #000; font-weight: bold; margin-top: 8px;">SET NAME & LAUNCH</button>
+      </div>
+    </div>
+
     <!-- MAIN MENU VIEW -->
     <section id="view-menu" class="view active">
       <div class="top-bar right-only">
@@ -167,11 +181,13 @@
           <div class="flip-card-inner" id="flip-card-inner">
             <!-- FRONT -->
             <div class="flip-face flip-front">
-              <div class="pilot-name-row">
-                <span id="pilot-name-display" class="pilot-name">Pilot</span>
-                <input id="pilot-name-input" type="text" maxlength="20" class="pilot-name-input hidden" placeholder="Enter Name" />
-                <button id="btn-edit-name" class="icon-mini-btn" title="Edit Name">✎</button>
-                <span class="tap-hint">Tap to flip</span>
+              <div class="pilot-name-row" style="flex-direction: column; align-items: stretch; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <label style="font-size: 0.75rem; color: #3498db; text-transform: uppercase; letter-spacing: 1px;">Pilot Call / Leaderboard Name</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input id="pilot-name-input" type="text" maxlength="20" class="pilot-name-input" style="flex: 1; width: auto; background: rgba(0,0,0,0.6); border: 1px solid #3498db; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 1rem;" placeholder="Enter Name" />
+                  <button id="btn-save-name" class="pill-btn green" style="padding: 8px 14px;">Save</button>
+                </div>
+                <span class="tap-hint" style="text-align: right;">Tap card to flip for ship systems</span>
               </div>
               <div class="profile-rows">
                 <div class="p-row"><span>First Flight</span><span id="p-first-date">No flights yet</span></div>
