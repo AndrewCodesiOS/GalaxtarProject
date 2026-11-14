@@ -207,20 +207,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // Always fetch the live pilot name directly from local storage stats
-    let finalName = stats.data.pilotName ? stats.data.pilotName.trim() : "";
-    
-    // If somehow blank, check the intro input box directly as a backup
-    if (!finalName) {
-      const introInput = document.getElementById("intro-name-input");
-      if (introInput && introInput.value.trim()) {
-        finalName = introInput.value.trim();
-        stats.data.pilotName = finalName;
-        stats.save();
-      } else {
-        finalName = "Pilot";
-      }
-    }
+    // Directly pull whatever locked name the user set
+    const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
 
     if (grid) {
       grid.innerHTML = `
@@ -232,12 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score directly using your custom name
+    // Submit score directly using the user's custom name
     if (!res.isPeaceful && res.distance > 0) {
       submitScore(finalName, res.distance);
     }
   }
-
 
   function updateStatsDisplay() {
     const d = stats.data;
