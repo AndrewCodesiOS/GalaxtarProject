@@ -575,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // Leaderboard Integration
-  const SHEETDB_API = "YOUR_SHEETDB_API_URL_HERE"; // Paste your SheetDB URL here
+  const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
 
   async function submitScore(pilotName, distance) {
     try {
