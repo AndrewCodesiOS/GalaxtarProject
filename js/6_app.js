@@ -180,10 +180,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // Force-sync any open name input box so it catches your custom name
+    // 1. Grab live value directly from the input box on screen if it exists
     const nameInput = document.getElementById("pilot-name-input");
-    if (nameInput && !nameInput.classList.contains("hidden")) {
-      stats.data.pilotName = nameInput.value.trim() || "Pilot";
+    let currentInputName = nameInput ? nameInput.value.trim() : "";
+    
+    // 2. Fall back to stats storage if input is empty
+    let finalName = currentInputName || stats.data.pilotName.trim();
+    
+    // 3. Save it back to stats to keep everything fully synced
+    if (currentInputName) {
+      stats.data.pilotName = currentInputName;
       stats.save();
     }
 
@@ -197,10 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // ACTUALLY SUBMIT THE SCORE WITH YOUR CUSTOM NAME OR PILOT ID TAG
+    // 4. Submit score (Only assign Pilot #XXXX if it's literally default/empty)
     if (!res.isPeaceful && res.distance > 0) {
-      let finalName = stats.data.pilotName.trim();
-      if (!finalName || finalName.toLowerCase() === "pilot") {
+      if (!finalName || finalName.toLowerCase() === "pilot" || finalName.toLowerCase().startsWith("pilot #")) {
         if (!stats.data.pilotId) {
           stats.data.pilotId = Math.floor(1000 + Math.random() * 9000);
           stats.save();
@@ -210,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
       submitScore(finalName, res.distance);
     }
   }
+
 
   function updateStatsDisplay() {
     const d = stats.data;
