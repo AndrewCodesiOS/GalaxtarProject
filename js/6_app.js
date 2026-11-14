@@ -235,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const nameDisplay = document.getElementById("pilot-name-display");
   const nameInput = document.getElementById("pilot-name-input");
   const editNameBtn = document.getElementById("btn-edit-name");
+  
   if (editNameBtn) {
     editNameBtn.addEventListener("click", () => {
       nameDisplay.classList.toggle("hidden");
@@ -246,6 +247,21 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.data.pilotName = nameInput.value.trim() || "Pilot";
         stats.save();
         nameDisplay.innerText = stats.data.pilotName;
+      }
+    });
+  }
+
+  if (nameInput) {
+    nameInput.addEventListener("blur", () => {
+      stats.data.pilotName = nameInput.value.trim() || "Pilot";
+      stats.save();
+      nameDisplay.innerText = stats.data.pilotName;
+      nameInput.classList.add("hidden");
+      nameDisplay.classList.remove("hidden");
+    });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        nameInput.blur();
       }
     });
   }
