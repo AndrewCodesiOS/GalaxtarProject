@@ -1072,6 +1072,35 @@ class ExploreGameEngine {
     ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
 
+    // Draw live shield health on bottom left
+    const currentHp = Math.max(0, this.ship.hp);
+    const maxHp = this.ship.maxHP;
+    const hpPercent = Math.max(0, Math.min(1, currentHp / maxHp));
+
+    const shieldBarWidth = 140;
+    const shieldBarHeight = 14;
+    const shieldBarX = 25;
+    const shieldBarY = this.canvas.height - 35;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.strokeStyle = "#3498db";
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = "#3498db";
+    ctx.shadowBlur = 6;
+    ctx.fillRect(shieldBarX, shieldBarY, shieldBarWidth, shieldBarHeight);
+    ctx.strokeRect(shieldBarX, shieldBarY, shieldBarWidth, shieldBarHeight);
+
+    ctx.fillStyle = hpPercent > 0.25 ? "#3498db" : "#e74c3c";
+    ctx.fillRect(shieldBarX + 2, shieldBarY + 2, (shieldBarWidth - 4) * hpPercent, shieldBarHeight - 4);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 11px monospace";
+    ctx.textAlign = "left";
+    ctx.shadowBlur = 4;
+    ctx.fillText(`SHIELD: ${currentHp}/${maxHp}`, shieldBarX + 10, shieldBarY + 11);
+    ctx.restore();
+
     // Draw live fuel gauge on bottom right
     const currentFuel = Math.floor(this.stats.data.currentFuel);
     const maxFuel = this.stats.maxFuel();
