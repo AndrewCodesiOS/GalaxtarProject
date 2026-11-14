@@ -176,9 +176,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function showGameOver(res) {
+    function showGameOver(res) {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
+    
+    // Force-sync any open name input box so it catches your custom name
+    const nameInput = document.getElementById("pilot-name-input");
+    if (nameInput && !nameInput.classList.contains("hidden")) {
+      stats.data.pilotName = nameInput.value.trim() || "Pilot";
+      stats.save();
+    }
+
     if (grid) {
       grid.innerHTML = `
         <div>Distance: ${res.distance}</div>
@@ -189,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score when flight completes with your custom name or pilot ID tag if default
+    // ACTUALLY SUBMIT THE SCORE WITH YOUR CUSTOM NAME OR PILOT ID TAG
     if (!res.isPeaceful && res.distance > 0) {
       let finalName = stats.data.pilotName.trim();
       if (!finalName || finalName.toLowerCase() === "pilot") {
@@ -202,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       submitScore(finalName, res.distance);
     }
   }
+
 
   function updateStatsDisplay() {
     const d = stats.data;
