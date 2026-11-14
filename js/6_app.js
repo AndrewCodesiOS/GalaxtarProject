@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const audio = new AudioController();
   const stats = new StatsStore();
-  const logManager = new FlightLogController(stats);
 
   audio.musicEnabled = stats.data.musicOn;
   audio.sfxEnabled = stats.data.sfxOn;
@@ -14,7 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
     gameCanvas,
     stats,
     audio,
-    logManager,
     result => showGameOver(result)
   );
 
@@ -113,7 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
     btnLaunch.addEventListener("click", () => {
-      // Double check name is set before launch
       if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
         if (introModal) introModal.classList.remove("hidden");
         return;
@@ -136,14 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnUpgrades.addEventListener("click", () => {
       updateUpgradesDisplay();
       showView("view-upgrades");
-    });
-  }
-
-  const btnLogs = document.getElementById("btn-logs");
-  if (btnLogs) {
-    btnLogs.addEventListener("click", () => {
-      updateLogsDisplay();
-      showView("view-logs");
     });
   }
 
@@ -207,10 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
-    // Always fetch the live pilot name directly from local storage stats
     let finalName = stats.data.pilotName ? stats.data.pilotName.trim() : "";
     
-    // If somehow blank, check the intro input box directly as a backup
     if (!finalName) {
       const introInput = document.getElementById("intro-name-input");
       if (introInput && introInput.value.trim()) {
@@ -232,12 +219,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score directly using your custom name
     if (!res.isPeaceful && res.distance > 0) {
       submitScore(finalName, res.distance);
     }
   }
-
 
   function updateStatsDisplay() {
     const d = stats.data;
@@ -471,19 +456,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderUpgradeList();
   }
 
-  function updateLogsDisplay() {
-    const container = document.getElementById("logs-container");
-    if (container) {
-      const logs = logManager.getLogs();
-      if (logs.length === 0) {
-        container.innerHTML = `<p style="padding: 20px; text-align: center; color: #777;">No flight logs recorded yet. Complete your first flight!</p>`;
-      } else {
-        container.innerHTML = logs.map(l => `<div style="background: rgba(255,255,255,0.05); padding: 12px; margin-bottom: 10px; border-radius: 6px;"><p style="font-size: 0.9rem; white-space: pre-wrap;">${l.text}</p></div>`).join("");
-      }
-      logManager.markAllRead();
-    }
-  }
-
   // Settings Toggles & Reset
   function updateSettingsDisplay() {
     const d = stats.data;
@@ -562,7 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const mode = btn.getAttribute("data-info");
       if (mode === "peaceful") {
         infoTitle.innerText = "Peaceful Mode";
-        infoDesc.innerText = "No fuel consumption over distance, no enemies attacking, and infinite exploration. Perfect for reading flight logs and relaxing.";
+        infoDesc.innerText = "No fuel consumption over distance, no enemies attacking, and infinite exploration. Perfect for relaxing.";
       } else if (mode === "hardcore") {
         infoTitle.innerText = "Hardcore Mode";
         infoDesc.innerText = "Double fuel drain, increased enemy spawn rates, and relentless difficulty for veteran pilots.";
@@ -577,7 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Pilot's Guide Navigation
   const guidePages = [
-    { title: "Mission Objective", text: "Welcome to GALAXTAR. You pilot deep-space research vessel Echo through an endless cosmic expanse.\n\nSurvive as long as you can, destroy incoming hostile ships and asteroids, collect points, and uncover mysterious story flight logs with each run." },
+    { title: "Mission Objective", text: "Welcome to GALAXTAR. You pilot deep-space research vessel Echo through an endless cosmic expanse.\n\nSurvive as long as you can, destroy incoming hostile ships and asteroids, and collect points to upgrade your vessel." },
     { title: "Flight Controls", text: "Desktop:\n- Use Arrow Keys or WASD to navigate.\n- Press Space to fire weapons.\n- Press Shift to activate Hyperspeed boost.\n\nMobile / Touch:\n- Drag your ship directly to steer smoothly.\n- Tap anywhere else on screen to shoot lasers.\n- Use the Boost button in the top left to accelerate." },
     { title: "Fuel & Asteroids", text: "Your ship constantly consumes fuel as you travel.\n\nShoot and destroy drifting asteroids to replenish your fuel reserves, earn points, and avoid hull damage.\n\nKeep an eye on your fuel gauge on the main menu!" },
     { title: "Combat & Upgrades", text: "Enemies and bosses will attack as you travel deeper into space. Defeat them to earn points.\n\nSpend earned points in the Upgrades menu to enhance your Fuel Capacity, Shield Strength, Weapon Firepower, and Thruster Speed, as well as customize ship colors and shapes." }
@@ -675,11 +647,12 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       data.forEach((row, index) => {
-        const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const rawName = row.name || row.Name || row.pilotName || row.Pilot || "Unknown";
+        const safeName = rawName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
             <span>#${index + 1} ${safeName}</span>
-            <span style="font-weight: bold; color: #2ecc71;">${row.distance} m</span>
+            <span style="font-weight: bold; color: #2ecc71;">${row.distance || row.Distance || 0} m</span>
           </div>
         `;
       });
