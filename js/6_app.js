@@ -564,9 +564,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Pilot's Guide Navigation
   const guidePages = [
-    { title: "Mission Objective", text: "Welcome to GALAXTAR. You pilot deep-space research vessel Echo through an endless cosmic expanse.\n\nSurvive as long as you can, destroy incoming hostile ships and asteroids, collect points, and uncover mysterious story flight logs with each run." },
-    { title: "Flight Controls", text: "Desktop:\n- Use Arrow Keys or WASD to navigate.\n- Press Space to fire weapons.\n- Press Shift to activate Hyperspeed boost.\n\nMobile / Touch:\n- Drag your ship directly to steer smoothly.\n- Tap anywhere else on screen to shoot lasers.\n- Use the Boost button in the top left to accelerate." },
-    { title: "Fuel & Asteroids", text: "Your ship constantly consumes fuel as you travel.\n\nShoot and destroy drifting asteroids to replenish your fuel reserves, earn points, and avoid hull damage.\n\nKeep an eye on your fuel gauge on the main menu!" },
+    { title: "Mission Objective", text: "Welcome to GALAXTAR. You pilot a deep-space research vessel through an endless cosmic expanse.\n\nSurvive as long as you can, destroy incoming hostile ships and asteroids, collect points, and upgrade your ship." },
+    { title: "Flight Controls", text: "Drag your ship directly to steer smoothly.\n- Tap anywhere else on screen to shoot lasers." },
+    { title: "Fuel & Asteroids", text: "Your ship constantly consumes fuel as you travel.\n\nShoot and destroy drifting asteroids to replenish your fuel reserves, earn points, and avoid hull damage.\n\nTap the fuel gauge on the main menu to refuel!" },
     { title: "Combat & Upgrades", text: "Enemies and bosses will attack as you travel deeper into space. Defeat them to earn points.\n\nSpend earned points in the Upgrades menu to enhance your Fuel Capacity, Shield Strength, Weapon Firepower, and Thruster Speed, as well as customize ship colors and shapes." }
   ];
   let currentGuidePage = 0;
