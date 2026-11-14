@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-      function showGameOver(res) {
+  function showGameOver(res) {
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     if (grid) {
