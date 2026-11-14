@@ -259,7 +259,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // SAVE ON EVERY KEYSTROKE + BLUR/ENTER TO GUARANTEE PERSISTENCE
   if (nameInput) {
+    nameInput.addEventListener("input", () => {
+      stats.data.pilotName = nameInput.value.trim() || "Pilot";
+      stats.save();
+      nameDisplay.innerText = stats.data.pilotName;
+    });
+
     nameInput.addEventListener("blur", () => {
       stats.data.pilotName = nameInput.value.trim() || "Pilot";
       stats.save();
@@ -267,6 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
       nameInput.classList.add("hidden");
       nameDisplay.classList.remove("hidden");
     });
+
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         nameInput.blur();
