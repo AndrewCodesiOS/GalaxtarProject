@@ -139,3 +139,14 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #050508; f
 .guide-dots { display: flex; gap: 8px; }
 .guide-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
 .guide-dot.active { background: #00f0ff; box-shadow: 0 0 6px #00f0ff; }
+
+/* Prevent zoom, text selection, and callouts during gameplay */
+#app, canvas, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#game-canvas {
+  touch-action: none;
+}
