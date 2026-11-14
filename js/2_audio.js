@@ -8,13 +8,23 @@ class AudioController {
     this.bgMusic = new Audio("galaxtartheme.m4a");
     this.bgMusic.loop = true;
     this.bgMusic.volume = 0.5;
+
+    // Automatically pause music when the app/tab goes to the background
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        this.bgMusic.pause();
+      } else {
+        if (this.musicEnabled) {
+          this.bgMusic.play().catch(e => console.log("Music resume error:", e));
+        }
+      }
+    });
   }
 
   init() {
     if (!this.audioCtx) {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    // Attempt to play background music on first user interaction if enabled
     if (this.musicEnabled && this.bgMusic.paused) {
       this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
