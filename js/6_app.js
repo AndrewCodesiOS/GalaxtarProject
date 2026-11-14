@@ -1,4 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Register Service Worker for PWA Installation
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(err => {
+        console.log("Service Worker registration failed:", err);
+      });
+    });
+  }
+
   const audio = new AudioController();
   const stats = new StatsStore();
   const logManager = new FlightLogController(stats);
@@ -489,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
         onBtn.classList.add("active");
       } else {
         offBtn.classList.remove("active");
-        offBtn.classList.add("active");
+        onBtn.classList.add("active");
       }
     }
   }
