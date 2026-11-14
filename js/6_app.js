@@ -497,8 +497,8 @@ document.addEventListener("DOMContentLoaded", () => {
         offBtn.classList.remove("active");
         onBtn.classList.add("active");
       } else {
+        offBtn.classList.add("active");
         offBtn.classList.remove("active");
-        onBtn.classList.add("active");
       }
     }
   }
