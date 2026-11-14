@@ -617,40 +617,57 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSettingsGuide = document.getElementById("btn-settings-guide");
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
 
-  // Leaderboard Integration
-  const SHEETDB_API = "https://sheetdb.io/api/v1/r8967tf5cqjdj";
+  // Leaderboard Integration (JSON Bin Endpoint)
+  const JSON_BIN_API = "https://api.npoint.io/751363eef716a95a4aef";
 
   async function submitScore(pilotName, distance) {
     try {
-      await fetch(SHEETDB_API, {
-        method: "POST",
+      // 1. Fetch current scores from the bin
+      const res = await fetch(JSON_BIN_API);
+      let scores = [];
+      if (res.ok) {
+        scores = await res.json();
+        if (!Array.isArray(scores)) scores = [];
+      }
+
+      // 2. Add the new score
+      scores.push({
+        name: pilotName,
+        distance: Number(distance),
+        date: new Date().toLocaleDateString()
+      });
+
+      // 3. Sort by distance descending and keep top 10
+      scores.sort((a, b) => b.distance - a.distance);
+      scores = scores.slice(0, 10);
+
+      // 4. Save the updated list back to the bin
+      await fetch(JSON_BIN_API, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: [{
-            name: pilotName,
-            distance: distance,
-            date: new Date().toLocaleDateString()
-          }]
-        })
+        body: JSON.stringify(scores)
       });
     } catch (err) {
-      console.error("Failed to upload score:", err);
+      console.error("Failed to update leaderboard:", err);
     }
   }
 
   async function loadLeaderboard() {
     const container = document.getElementById("leaderboard-list");
     if (!container) return;
-    container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">Synchronizing...</p>`;
+    container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">Synchronizing with galactic telemetry...</p>`;
 
     try {
-      const response = await fetch(`${SHEETDB_API}?sort_by=distance&sort_order=desc&limit=10`);
+      const response = await fetch(JSON_BIN_API);
       const data = await response.json();
 
-      if (!data || data.length === 0) {
+      if (!Array.isArray(data) || data.length === 0) {
         container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">No flight records found yet.</p>`;
         return;
       }
+
+      // Sort just to be safe
+      data.sort((a, b) => b.distance - a.distance);
 
       let html = `
         <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #3498db; max-width: 600px; margin: 0 auto;">
