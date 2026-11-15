@@ -222,12 +222,14 @@ class ExploreGameEngine {
       hasRegen: shieldInfo.regen
     };
 
-    // Initialize AI Drone position beside the ship if equipped
+    // Initialize independent AI Drone patrolling the lower area
     this.drone = {
-      x: this.ship.x + 45,
-      y: this.ship.y + 10,
+      x: this.canvas.width / 2,
+      y: this.canvas.height - 120,
       w: 24,
-      h: 24
+      h: 24,
+      vx: 150,
+      fireTimer: 0
     };
 
     this.stars = [];
@@ -236,6 +238,7 @@ class ExploreGameEngine {
     this.asteroids = [];
     this.enemies = [];
     this.bullets = [];
+    this.droneBullets = [];
     this.chargeBullets = [];
     this.enemyBullets = [];
     this.particles = [];
@@ -701,12 +704,25 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // Smoothly update AI Drone position to hover beside the ship
+      // Independent AI Drone Movement & Laser Blasting Logic
       if (this.hasAiDrone && this.drone) {
-        const targetX = this.ship.x + 45;
-        const targetY = this.ship.y + 10;
-        this.drone.x += (targetX - this.drone.x) * 10 * dt;
-        this.drone.y += (targetY - this.drone.y) * 10 * dt;
+        this.drone.x += this.drone.vx * dt;
+        if (this.drone.x < 50 || this.drone.x > this.canvas.width - 50) {
+          this.drone.vx *= -1;
+        }
+
+        this.drone.fireTimer += dt;
+        if (this.drone.fireTimer >= 0.35) {
+          this.drone.fireTimer = 0;
+          this.droneBullets.push({
+            x: this.drone.x,
+            y: this.drone.y - 12,
+            size: 7,
+            speed: 680,
+            color: "#00f0ff",
+            damage: 2
+          });
+        }
       }
 
       if (this.isCharging) {
@@ -947,6 +963,11 @@ class ExploreGameEngine {
       return b.y > -20;
     });
 
+    this.droneBullets = this.droneBullets.filter(b => {
+      b.y -= b.speed * dt;
+      return b.y > -20;
+    });
+
     this.chargeBullets = this.chargeBullets.filter(b => {
       b.y -= b.speed * dt;
       return b.y > -40;
@@ -994,55 +1015,6 @@ class ExploreGameEngine {
       return Math.ceil(basePts * mult);
     };
 
-    // AI Drone Continuous Laser Beam Damage Logic against Enemies & Asteroids
-    if (this.hasAiDrone && this.drone) {
-      const laserX = this.drone.x;
-      const laserY = this.drone.y;
-      const laserWidth = 10;
-
-      // Check laser against enemies
-      for (let j = this.enemies.length - 1; j >= 0; j--) {
-        const e = this.enemies[j];
-        if (Math.abs(e.x - laserX) < (e.w / 2 + laserWidth) && laserY > e.y - e.h / 2 && laserY < e.y + e.h / 2) {
-          e.hp -= 0.5; // continuous laser tick damage
-          if (e.hp <= 0) {
-            const pts = e.points;
-            this.sessionShips++;
-            if (!d.isPeacefulMode) {
-              this.sessionPoints += getCalculatedPoints(pts);
-            }
-            if (this.activeModules && this.activeModules.has("fuel_extractor")) {
-              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
-            }
-            this.audio.playExplosion(false);
-            this.spawnExplosion(e.x, e.y, e.color, 24);
-            this.enemies.splice(j, 1);
-          }
-        }
-      }
-
-      // Check laser against boss
-      if (this.isBossActive && this.boss) {
-        if (Math.abs(this.boss.x - laserX) < (this.boss.w / 2 + laserWidth) && laserY > this.boss.y - this.boss.h / 2 && laserY < this.boss.y + this.boss.h / 2) {
-          this.boss.hp -= 0.5;
-          if (this.boss.hp <= 0) {
-            this.resolveBossDefeat();
-          }
-        }
-      }
-
-      // Check laser against asteroids
-      for (let j = this.asteroids.length - 1; j >= 0; j--) {
-        const a = this.asteroids[j];
-        if (Math.abs(a.x - laserX) < (a.size / 2 + laserWidth) && laserY > a.y - a.size / 2 && laserY < a.y + a.size / 2) {
-          a.hp -= 0.5;
-          if (a.hp <= 0) {
-            this.destroyAsteroid(j, getCalculatedPoints);
-          }
-        }
-      }
-    }
-
     if (this.isBossActive && this.boss) {
       for (let i = this.bullets.length - 1; i >= 0; i--) {
         const b = this.bullets[i];
@@ -1050,6 +1022,21 @@ class ExploreGameEngine {
           this.boss.hp -= b.damage;
           this.spawnExplosion(b.x, b.y, this.boss.color, 6);
           this.bullets.splice(i, 1);
+
+          if (this.boss.hp <= 0) {
+            this.resolveBossDefeat();
+            return;
+          }
+          break;
+        }
+      }
+
+      for (let i = this.droneBullets.length - 1; i >= 0; i--) {
+        const b = this.droneBullets[i];
+        if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
+          this.boss.hp -= b.damage;
+          this.spawnExplosion(b.x, b.y, this.boss.color, 6);
+          this.droneBullets.splice(i, 1);
 
           if (this.boss.hp <= 0) {
             this.resolveBossDefeat();
@@ -1078,6 +1065,7 @@ class ExploreGameEngine {
       }
     }
 
+    // Handle Player Bullets Collisions
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
       let consumed = false;
@@ -1126,6 +1114,53 @@ class ExploreGameEngine {
       }
 
       if (consumed) this.bullets.splice(i, 1);
+    }
+
+    // Handle AI Drone Laser Blast Collisions
+    for (let i = this.droneBullets.length - 1; i >= 0; i--) {
+      const b = this.droneBullets[i];
+      let consumed = false;
+
+      for (let j = this.enemies.length - 1; j >= 0; j--) {
+        const e = this.enemies[j];
+        if (hitBox(b.x, b.y, b.size, b.size, e.x, e.y, e.w, e.h)) {
+          e.hp -= b.damage;
+          this.spawnExplosion(b.x, b.y, "#00f0ff", 5);
+          consumed = true;
+
+          if (e.hp <= 0) {
+            const pts = e.points;
+            this.sessionShips++;
+            if (!d.isPeacefulMode) {
+              this.sessionPoints += getCalculatedPoints(pts);
+            }
+            if (this.activeModules && this.activeModules.has("fuel_extractor")) {
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
+            }
+            this.audio.playExplosion(false);
+            this.spawnExplosion(e.x, e.y, e.color, 24);
+            this.enemies.splice(j, 1);
+          }
+          break;
+        }
+      }
+
+      if (!consumed) {
+        for (let j = this.asteroids.length - 1; j >= 0; j--) {
+          const a = this.asteroids[j];
+          if (hitBox(b.x, b.y, b.size, b.size, a.x, a.y, a.size, a.size)) {
+            a.hp -= b.damage;
+            this.spawnExplosion(b.x, b.y, "#00f0ff", 5);
+            consumed = true;
+            if (a.hp <= 0) {
+              this.destroyAsteroid(j, getCalculatedPoints);
+            }
+            break;
+          }
+        }
+      }
+
+      if (consumed) this.droneBullets.splice(i, 1);
     }
 
     for (let i = this.chargeBullets.length - 1; i >= 0; i--) {
@@ -1476,6 +1511,17 @@ class ExploreGameEngine {
       ctx.fill();
     }
 
+    for (const b of this.droneBullets) {
+      ctx.save();
+      ctx.fillStyle = b.color;
+      ctx.shadowColor = b.color;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     for (const b of this.chargeBullets) {
       ctx.save();
       ctx.fillStyle = b.color;
@@ -1525,31 +1571,12 @@ class ExploreGameEngine {
         ctx.restore();
       }
 
-      // Render AI Companion Drone and its Continuous Laser Beam
+      // Render Independent AI Companion Drone at bottom patrol area
       if (this.hasAiDrone && this.drone) {
         ctx.save();
-        // Draw continuous laser beam shooting straight up
-        ctx.strokeStyle = "#00f0ff";
-        ctx.lineWidth = 4;
-        ctx.shadowColor = "#00f0ff";
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.moveTo(this.drone.x, this.drone.y);
-        ctx.lineTo(this.drone.x, 0);
-        ctx.stroke();
-
-        // Draw core white beam center
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(this.drone.x, this.drone.y);
-        ctx.lineTo(this.drone.x, 0);
-        ctx.stroke();
-
-        // Draw Drone Body
         ctx.fillStyle = "#00f0ff";
         ctx.shadowColor = "#00f0ff";
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.arc(this.drone.x, this.drone.y, this.drone.w / 2, 0, Math.PI * 2);
         ctx.fill();
