@@ -4,17 +4,27 @@ class AudioController {
     this.musicEnabled = true;
     this.sfxEnabled = true;
     
-    // Procedural Music State
+    // Background music setup using your m4a file
+    this.bgMusic = new Audio("galaxtartheme.m4a");
+    this.bgMusic.loop = true;
+    this.bgMusic.volume = 0.5;
+
+    // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
-    this.musicInterval = null;
+    this.bossInterval = null;
 
     // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
-        this.stopMusic();
+        this.bgMusic.pause();
+        this.stopBossSynth();
       } else {
         if (this.musicEnabled) {
-          this.startMusic();
+          if (this.isBossMusicPlaying) {
+            this.startBossSynth();
+          } else {
+            this.bgMusic.play().catch(e => console.log("Music resume error:", e));
+          }
         }
       }
     });
@@ -27,81 +37,77 @@ class AudioController {
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && !this.musicInterval) {
-      this.startMusic();
+    if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
+      this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
   }
 
   setMusicEnabled(val) {
     this.musicEnabled = val;
     if (val) {
-      this.startMusic();
+      if (this.isBossMusicPlaying) {
+        this.startBossSynth();
+      } else {
+        this.bgMusic.play().catch(e => console.log("Music play error:", e));
+      }
     } else {
-      this.stopMusic();
+      this.bgMusic.pause();
+      this.stopBossSynth();
     }
   }
 
   switchToBossMusic() {
     this.isBossMusicPlaying = true;
-    // Restart interval to immediately shift tempo/notes to the boss loop
+    this.bgMusic.pause();
     if (this.musicEnabled) {
-      this.startMusic();
+      this.startBossSynth();
     }
   }
 
   switchToNormalMusic() {
     this.isBossMusicPlaying = false;
-    // Restart interval to shift back to normal exploration groove
+    this.stopBossSynth();
     if (this.musicEnabled) {
-      this.startMusic();
+      this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
     }
   }
 
-  startMusic() {
+  startBossSynth() {
     this.init();
-    if (!this.audioCtx || this.musicInterval) return;
+    if (!this.audioCtx || this.bossInterval) return;
 
-    // Normal exploration melody vs Boss battle melody
-    const normalBass = [130.81, 98.00, 110.00, 87.31]; // C3, G3, A3, F3 groove
-    const normalLead = [261.63, 329.63, 392.00, 523.25];
-    
-    const bossBass = [110, 110, 130.81, 98.00]; // Intense pulsing boss notes
-    const bossLead = [220, 329.63, 440, 523.25, 440, 329.63];
-
+    // Retro boss arpeggio & bassline loop
+    const bassNotes = [110, 110, 130.81, 98.00]; // A2, A2, C3, G2
+    const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
     let step = 0;
 
-    // We use different intervals/tempos: exploration is smoother, boss is frantic
-    const tempo = this.isBossMusicPlaying ? 150 : 240;
-
-    this.musicInterval = setInterval(() => {
+    this.bossInterval = setInterval(() => {
       if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
       
       try {
         const now = this.audioCtx.currentTime;
-        const bNotes = this.isBossMusicPlaying ? bossBass : normalBass;
-        const lNotes = this.isBossMusicPlaying ? bossLead : normalLead;
 
-        // 1. Bass Synth
+        // 1. Pulsing Boss Bass Synth
         const bassOsc = this.audioCtx.createOscillator();
         const bassGain = this.audioCtx.createGain();
-        bassOsc.type = this.isBossMusicPlaying ? "sawtooth" : "triangle";
-        bassOsc.frequency.setValueAtTime(bNotes[Math.floor(step / 2) % bNotes.length], now);
+        bassOsc.type = "sawtooth";
+        bassOsc.frequency.setValueAtTime(bassNotes[Math.floor(step / 2) % bassNotes.length], now);
         
-        bassGain.gain.setValueAtTime(this.isBossMusicPlaying ? 0.12 : 0.08, now);
-        bassGain.gain.exponentialRampToValueAtTime(0.001, now + (this.isBossMusicPlaying ? 0.2 : 0.3));
+        bassGain.gain.setValueAtTime(0.12, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
         bassOsc.connect(bassGain);
         bassGain.connect(this.audioCtx.destination);
         bassOsc.start(now);
-        bassOsc.stop(now + (this.isBossMusicPlaying ? 0.2 : 0.3));
+        bassOsc.stop(now + 0.2);
 
-        // 2. Arpeggio Lead
+        // 2. High Retro Arpeggio Lead
         const leadOsc = this.audioCtx.createOscillator();
         const leadGain = this.audioCtx.createGain();
         leadOsc.type = "square";
-        leadOsc.frequency.setValueAtTime(lNotes[step % lNotes.length], now);
+        leadOsc.frequency.setValueAtTime(leadNotes[step % leadNotes.length], now);
 
-        leadGain.gain.setValueAtTime(0.06, now);
+        leadGain.gain.setValueAtTime(0.08, now);
         leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
         leadOsc.connect(leadGain);
@@ -111,15 +117,15 @@ class AudioController {
 
         step++;
       } catch (e) {
-        console.log("Procedural music tick error:", e);
+        console.log("Boss synth tick error:", e);
       }
-    }, tempo);
+    }, 150); // Speed of the boss beat tempo
   }
 
-  stopMusic() {
-    if (this.musicInterval) {
-      clearInterval(this.musicInterval);
-      this.musicInterval = null;
+  stopBossSynth() {
+    if (this.bossInterval) {
+      clearInterval(this.bossInterval);
+      this.bossInterval = null;
     }
   }
 
