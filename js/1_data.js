@@ -48,6 +48,56 @@ const GALAXTAR_DATA = {
     { name: "Circle", id: "circle", cost: 1000, color: "#f1c40f" },
     { name: "Diamond", id: "diamond", cost: 2000, color: "#e74c3c" }
   ],
+  modules: [
+    {
+      id: "fuel_scavenger",
+      name: "Fuel Scavenger",
+      rarity: "COMMON",
+      color: "#2ecc71",
+      weight: 30,
+      desc: "Asteroids restore +40% bonus fuel when destroyed."
+    },
+    {
+      id: "bounty_scanner",
+      name: "Bounty Scanner",
+      rarity: "COMMON",
+      color: "#2ecc71",
+      weight: 30,
+      desc: "Earn +25% bonus points from all ships and asteroids."
+    },
+    {
+      id: "reinforced_hull",
+      name: "Reinforced Plating",
+      rarity: "COMMON",
+      color: "#2ecc71",
+      weight: 25,
+      desc: "Start the flight with +2 bonus Shield HP."
+    },
+    {
+      id: "cryo_thrusters",
+      name: "Cryo-Regulator",
+      rarity: "RARE",
+      color: "#3498db",
+      weight: 18,
+      desc: "Reduces passive fuel burn over distance by 25%."
+    },
+    {
+      id: "overclock_core",
+      name: "Overclock Core",
+      rarity: "RARE",
+      color: "#9b59b6",
+      weight: 15,
+      desc: "Increases projectile speed by 25% and adds +1 bullet damage."
+    },
+    {
+      id: "phoenix_protocol",
+      name: "Phoenix Protocol",
+      rarity: "EPIC",
+      color: "#f1c40f",
+      weight: 7,
+      desc: "Survive 1 fatal hit with full HP restored and a screen-clearing blast."
+    }
+  ],
   enemyTypes: {
     normal: { health: 6, points: 1, w: 50, h: 60, color: "#e74c3c", shape: "downTriangle" },
     purpleBoss: { health: 14, points: 2, w: 65, h: 78, color: "#9b59b6", shape: "downTriangle" },
