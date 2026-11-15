@@ -719,7 +719,7 @@ class ExploreGameEngine {
             length: 22,
             speed: 380, // Slower, balanced speed
             color: "#00f0ff",
-            damage: 1 // 1 HP damage per hit
+            damage: 0.5 // 0.5 HP damage per hit
           });
         }
       }
