@@ -54,7 +54,8 @@ class StatsStore {
     localStorage.setItem("galaxtar_save_v1", JSON.stringify(this.data));
   }
   maxFuel() {
-    return GALAXTAR_DATA.fuelLevels[this.data.fuelLevel - 1].max;
+    let base = GALAXTAR_DATA.fuelLevels[this.data.fuelLevel - 1].max;
+    return base;
   }
   consumeFuel(amount) {
     if (this.data.isPeacefulMode) return;
@@ -76,7 +77,7 @@ class StatsStore {
     if (!this.data.moduleInventory) return;
     moduleIds.forEach(id => {
       if (this.data.moduleInventory[id] && this.data.moduleInventory[id] > 0) {
-        this.data.moduleInventory[id] -= 1;
+        this.data.moduleInventory[id] -= 1; // Single-use consumption
         if (this.data.moduleInventory[id] <= 0) {
           delete this.data.moduleInventory[id];
         }
