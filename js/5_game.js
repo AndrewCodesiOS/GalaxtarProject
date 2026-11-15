@@ -562,6 +562,7 @@ class ExploreGameEngine {
         shape: "octagon",
         attackTimer: 0,
         phase: 1,
+        burstStep: 0,
         beamTimer: 0
       };
     }
@@ -626,16 +627,43 @@ class ExploreGameEngine {
       }
     } else if (this.boss.tier === 100000) {
       if (this.boss.hp <= 300) this.boss.phase = 2;
-      const spread = this.boss.phase === 2 ? 7 : 4;
-      for (let i = -spread; i <= spread; i++) {
-        this.enemyBullets.push({
-          x: this.boss.x,
-          y: this.boss.y + this.boss.h / 2,
-          vx: i * 50,
-          vy: 340,
-          size: 11,
-          color: this.boss.phase === 2 ? "#ff0055" : "#ffffff"
-        });
+      
+      if (this.boss.phase === 2) {
+        // Two red bullet bursts, short pause, then two red bullet bursts pattern
+        const fireBurst = () => {
+          const spread = 7;
+          for (let i = -spread; i <= spread; i++) {
+            this.enemyBullets.push({
+              x: this.boss.x,
+              y: this.boss.y + this.boss.h / 2,
+              vx: i * 50,
+              vy: 340,
+              size: 11,
+              color: "#ff0055"
+            });
+          }
+        };
+
+        fireBurst();
+        this.boss.burstStep = (this.boss.burstStep || 0) + 1;
+
+        if (this.boss.burstStep === 2) {
+          // Pause longer after the second burst before starting the next pair
+          this.boss.attackTimer = -0.6;
+          this.boss.burstStep = 0;
+        }
+      } else {
+        const spread = 4;
+        for (let i = -spread; i <= spread; i++) {
+          this.enemyBullets.push({
+            x: this.boss.x,
+            y: this.boss.y + this.boss.h / 2,
+            vx: i * 50,
+            vy: 340,
+            size: 11,
+            color: "#ffffff"
+          });
+        }
       }
     }
   }
@@ -939,7 +967,7 @@ class ExploreGameEngine {
       }
 
       this.boss.attackTimer += dt;
-      const attackInterval = this.boss.tier === 100000 && this.boss.phase === 2 ? 0.8 : 1.2;
+      const attackInterval = this.boss.tier === 100000 && this.boss.phase === 2 ? 0.7 : 1.2;
       if (this.boss.attackTimer >= attackInterval) {
         this.boss.attackTimer = 0;
         this.bossShoot();
