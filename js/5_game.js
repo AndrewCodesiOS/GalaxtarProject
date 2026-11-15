@@ -68,7 +68,7 @@ class ExploreGameEngine {
     this.isGameOver = false;
     this.isManualEnd = false;
 
-    // Boss State Properties & Milestone Trackers (Updated for 40k, 80k, 120k, 160k, 200k)
+    // Boss State Properties & Milestone Trackers
     this.isBossActive = false;
     this.bossDefeatedAt40k = false;
     this.bossDefeatedAt80k = false;
@@ -515,7 +515,6 @@ class ExploreGameEngine {
         timer: 0
       };
     } else if (tier === 120000) {
-      this.solarFirewalls = [];
       this.boss = {
         tier: 120000,
         name: "SOLAR DREADNOUGHT 'HELIOS PHOENIX'",
@@ -529,7 +528,8 @@ class ExploreGameEngine {
         color: "#ff9900",
         shape: "diamond",
         attackTimer: 0,
-        firewallTimer: 0
+        phoenixState: "normal", // normal -> rebirthing -> reborn
+        rebirthTimer: 0
       };
     } else if (tier === 160000) {
       this.boss = {
@@ -597,23 +597,23 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 120000) {
-      [-0.6, -0.3, 0, 0.3, 0.6].forEach(ang => {
+      // Helios Phoenix Fire Breath Attack (Sweeping fan of fiery projectiles)
+      const isReborn = this.boss.phoenixState === "reborn";
+      const count = isReborn ? 9 : 6;
+      const speedMult = isReborn ? 1.3 : 1.0;
+      
+      for (let i = 0; i < count; i++) {
+        const progress = i / (count - 1);
+        const ang = -0.7 + (progress * 1.4);
         this.enemyBullets.push({
           x: this.boss.x,
           y: this.boss.y + this.boss.h / 2,
-          vx: ang * 180,
-          vy: spd * 1.2,
-          size: 9,
-          color: "#ff9900"
+          vx: Math.sin(ang) * 240,
+          vy: spd * speedMult,
+          size: isReborn ? 11 : 9,
+          color: isReborn ? "#ff3300" : "#ff9900"
         });
-      });
-      this.solarFirewalls.push({
-        x: Math.random() * (this.canvas.width - 200),
-        y: this.boss.y + 120,
-        w: 220,
-        h: 16,
-        life: 5.0
-      });
+      }
     } else if (this.boss.tier === 160000) {
       for (let i = -3; i <= 3; i++) {
         this.enemyBullets.push({
@@ -932,6 +932,19 @@ class ExploreGameEngine {
     }
 
     if (this.isBossActive && this.boss) {
+      // Handle Phoenix Rebirth state transition animation / pause
+      if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") {
+        this.boss.rebirthTimer -= dt;
+        if (this.boss.rebirthTimer <= 0) {
+          this.boss.phoenixState = "reborn";
+          this.boss.maxHp = 150;
+          this.boss.hp = 150;
+          this.boss.color = "#ff3300"; // Brighter fiery red-orange
+          this.spawnExplosion(this.boss.x, this.boss.y, "#ffcc00", 50);
+        }
+        return; // Pause movement and firing during rebirth animation
+      }
+
       this.boss.x += this.boss.vx * dt;
       
       const margin = 80;
@@ -954,18 +967,8 @@ class ExploreGameEngine {
         }
       }
 
-      if (this.boss.tier === 120000) {
-        this.solarFirewalls.forEach(fw => {
-          fw.life -= dt;
-          if (Math.abs(this.ship.x - (fw.x + fw.w / 2)) < fw.w / 2 && Math.abs(this.ship.y - fw.y) < 15) {
-            if (!this.isInvulnerable) this.damagePlayer(1);
-          }
-        });
-        this.solarFirewalls = this.solarFirewalls.filter(fw => fw.life > 0);
-      }
-
       this.boss.attackTimer += dt;
-      const attackInterval = this.boss.tier === 200000 && this.boss.phase === 2 ? 0.7 : 1.2;
+      const attackInterval = this.boss.tier === 200000 && this.boss.phase === 2 ? 0.7 : (this.boss.tier === 120000 && this.boss.phoenixState === "reborn" ? 0.8 : 1.2);
       if (this.boss.attackTimer >= attackInterval) {
         this.boss.attackTimer = 0;
         this.bossShoot();
@@ -1081,6 +1084,9 @@ class ExploreGameEngine {
     };
 
     if (this.isBossActive && this.boss) {
+      // Skip collision processing while phoenix is in middle of rebirth animation
+      if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") return;
+
       for (let i = this.bullets.length - 1; i >= 0; i--) {
         const b = this.bullets[i];
         if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
@@ -1089,6 +1095,15 @@ class ExploreGameEngine {
           this.bullets.splice(i, 1);
 
           if (this.boss.hp <= 0) {
+            if (this.boss.tier === 120000 && this.boss.phoenixState === "normal") {
+              // Trigger Phoenix Rebirth sequence!
+              this.boss.phoenixState = "rebirthing";
+              this.boss.rebirthTimer = 2.0; // 2 second pause while breaking apart into embers
+              this.audio.playExplosion(false);
+              this.spawnExplosion(this.boss.x, this.boss.y, "#ff9900", 70);
+              this.enemyBullets = [];
+              return;
+            }
             this.resolveBossDefeat();
             return;
           }
@@ -1104,6 +1119,14 @@ class ExploreGameEngine {
           this.droneBeams.splice(i, 1);
 
           if (this.boss.hp <= 0) {
+            if (this.boss.tier === 120000 && this.boss.phoenixState === "normal") {
+              this.boss.phoenixState = "rebirthing";
+              this.boss.rebirthTimer = 2.0;
+              this.audio.playExplosion(false);
+              this.spawnExplosion(this.boss.x, this.boss.y, "#ff9900", 70);
+              this.enemyBullets = [];
+              return;
+            }
             this.resolveBossDefeat();
             return;
           }
@@ -1118,6 +1141,14 @@ class ExploreGameEngine {
           this.chargeBullets.splice(i, 1);
 
           if (this.boss.hp <= 0) {
+            if (this.boss.tier === 120000 && this.boss.phoenixState === "normal") {
+              this.boss.phoenixState = "rebirthing";
+              this.boss.rebirthTimer = 2.0;
+              this.audio.playExplosion(false);
+              this.spawnExplosion(this.boss.x, this.boss.y, "#ff9900", 70);
+              this.enemyBullets = [];
+              return;
+            }
             this.resolveBossDefeat();
             return;
           }
@@ -1554,15 +1585,6 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
-    for (const fw of this.solarFirewalls) {
-      ctx.save();
-      ctx.fillStyle = "#ff5500";
-      ctx.shadowColor = "#ff9900";
-      ctx.shadowBlur = 15;
-      ctx.fillRect(fw.x, fw.y, fw.w, fw.h);
-      ctx.restore();
-    }
-
     if (this.isCharging) {
       ctx.save();
       ctx.fillStyle = "#ffffff";
@@ -1618,7 +1640,19 @@ class ExploreGameEngine {
     }
 
     if (this.isBossActive && this.boss) {
-      this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true);
+      // If phoenix is rebirthing, render glowing embers / particles instead of solid shape
+      if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") {
+        ctx.save();
+        ctx.fillStyle = "#ffcc00";
+        ctx.shadowColor = "#ff3300";
+        ctx.shadowBlur = 25;
+        ctx.beginPath();
+        ctx.arc(this.boss.x, this.boss.y, 28 + Math.sin(performance.now() * 0.02) * 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true);
+      }
     }
 
     if (!this.isGameOver || this.isManualEnd) {
@@ -1692,7 +1726,8 @@ class ExploreGameEngine {
       ctx.font = "bold 11px monospace";
       ctx.textAlign = "center";
       ctx.shadowBlur = 4;
-      ctx.fillText(`${this.boss.name}`, this.canvas.width / 2, bossBarY + 13);
+      const bossDisplayName = this.boss.tier === 120000 && this.boss.phoenixState === "reborn" ? "HELIOS PHOENIX (REBORN)" : this.boss.name;
+      ctx.fillText(bossDisplayName, this.canvas.width / 2, bossBarY + 13);
       ctx.restore();
     }
 
