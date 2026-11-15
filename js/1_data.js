@@ -78,13 +78,13 @@ const GALAXTAR_DATA = {
       desc: "Start the flight with +2 bonus Shield HP. (Single-use)"
     },
     {
-      id: "stellar_compass",
-      name: "Stellar Compass",
+      id: "kinetic_plating",
+      name: "Kinetic Plating",
       rarity: "COMMON",
       color: "#2ecc71",
       weight: 18,
       price: 25,
-      desc: "Starfield objects pass 20% faster, increasing visual flow. (Single-use)"
+      desc: "Gain temporary invulnerability for 2s upon taking shield damage. (Single-use)"
     },
 
     /* Rares ($55 pts) */
@@ -113,16 +113,16 @@ const GALAXTAR_DATA = {
       color: "#3498db",
       weight: 10,
       price: 55,
-      desc: "Small asteroids take double damage from all weapons. (Single-use)"
+      desc: "All asteroids take double damage from weapon fire. (Single-use)"
     },
     {
-      id: "ion_capacitor",
-      name: "Ion Capacitor",
+      id: "scrap_extractor",
+      name: "Scrap Extractor",
       rarity: "RARE",
       color: "#9b59b6",
       weight: 10,
       price: 55,
-      desc: "Increases max fuel capacity by +50 for the run. (Single-use)"
+      desc: "Destroying enemy ships restores a small burst of fuel (+10). (Single-use)"
     },
 
     /* Epics ($115 pts) */
@@ -136,13 +136,13 @@ const GALAXTAR_DATA = {
       desc: "Survive 1 fatal hit with full HP restored and a screen blast. (Single-use)"
     },
     {
-      id: "quantum_accelerator",
-      name: "Quantum Accelerator",
+      id: "laser_overcharger",
+      name: "Laser Overcharger",
       rarity: "EPIC",
       color: "#f1c40f",
       weight: 5,
       price: 115,
-      desc: "Double weapon projectile count for the entire flight. (Single-use)"
+      desc: "Weapons fire an extra tracking energy beam with every shot. (Single-use)"
     },
     {
       id: "void_shield_gen",
