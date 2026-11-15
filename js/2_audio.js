@@ -4,17 +4,27 @@ class AudioController {
     this.musicEnabled = true;
     this.sfxEnabled = true;
     
-    this.isBossMusicPlaying = false;
-    this.nextNoteTime = 0;
-    this.schedulerTimer = null;
-    this.songStep = 0;
+    // Background music setup using your m4a file
+    this.bgMusic = new Audio("galaxtartheme.m4a");
+    this.bgMusic.loop = true;
+    this.bgMusic.volume = 0.5;
 
+    // Procedural Boss Beat State
+    this.isBossMusicPlaying = false;
+    this.bossInterval = null;
+
+    // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
-        this.stopProceduralMusic();
+        this.bgMusic.pause();
+        this.stopBossSynth();
       } else {
         if (this.musicEnabled) {
-          this.startProceduralMusic();
+          if (this.isBossMusicPlaying) {
+            this.startBossSynth();
+          } else {
+            this.bgMusic.play().catch(e => console.log("Music resume error:", e));
+          }
         }
       }
     });
@@ -27,102 +37,95 @@ class AudioController {
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && !this.schedulerTimer) {
-      this.startProceduralMusic();
+    if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
+      this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
   }
 
   setMusicEnabled(val) {
     this.musicEnabled = val;
     if (val) {
-      this.startProceduralMusic();
+      if (this.isBossMusicPlaying) {
+        this.startBossSynth();
+      } else {
+        this.bgMusic.play().catch(e => console.log("Music play error:", e));
+      }
     } else {
-      this.stopProceduralMusic();
+      this.bgMusic.pause();
+      this.stopBossSynth();
     }
   }
 
   switchToBossMusic() {
     this.isBossMusicPlaying = true;
-    this.songStep = 0; // Reset sequence cleanly on transition
+    this.bgMusic.pause();
+    if (this.musicEnabled) {
+      this.startBossSynth();
+    }
   }
 
   switchToNormalMusic() {
     this.isBossMusicPlaying = false;
-    this.songStep = 0;
-  }
-
-  startProceduralMusic() {
-    this.init();
-    if (!this.audioCtx || this.schedulerTimer) return;
-
-    this.nextNoteTime = this.audioCtx.currentTime + 0.1;
-
-    // Background scheduler ticks every 25ms to queue precise audio events ahead of time
-    this.schedulerTimer = setInterval(() => {
-      if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
-
-      // Lookahead scheduling window (0.1 seconds)
-      while (this.nextNoteTime < this.audioCtx.currentTime + 0.1) {
-        this.scheduleNote();
-      }
-    }, 25);
-  }
-
-  stopProceduralMusic() {
-    if (this.schedulerTimer) {
-      clearInterval(this.schedulerTimer);
-      this.schedulerTimer = null;
+    this.stopBossSynth();
+    if (this.musicEnabled) {
+      this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
     }
   }
 
-  scheduleNote() {
-    const t = this.nextNoteTime;
-    
-    // Normal exploration vs Boss chiptune notes & timing
-    const normalBass = [130.81, 98.00, 110.00, 87.31]; // C3, G3, A3, F3
-    const normalLead = [261.63, 329.63, 392.00, 523.25];
-    
-    const bossBass = [110.00, 110.00, 130.81, 98.00]; 
-    const bossLead = [220.00, 329.63, 440.00, 523.25, 440.00, 329.63];
+  startBossSynth() {
+    this.init();
+    if (!this.audioCtx || this.bossInterval) return;
 
-    const bNotes = this.isBossMusicPlaying ? bossBass : normalBass;
-    const lNotes = this.isBossMusicPlaying ? bossLead : normalLead;
-    const noteDuration = this.isBossMusicPlaying ? 0.15 : 0.25;
+    // Retro boss arpeggio & bassline loop
+    const bassNotes = [110, 110, 130.81, 98.00]; // A2, A2, C3, G2
+    const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
+    let step = 0;
 
-    try {
-      // 1. Bass Oscillator
-      const bassOsc = this.audioCtx.createOscillator();
-      const bassGain = this.audioCtx.createGain();
-      bassOsc.type = this.isBossMusicPlaying ? "sawtooth" : "triangle";
-      bassOsc.frequency.setValueAtTime(bNotes[Math.floor(this.songStep / 2) % bNotes.length], t);
+    this.bossInterval = setInterval(() => {
+      if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
+      
+      try {
+        const now = this.audioCtx.currentTime;
 
-      bassGain.gain.setValueAtTime(this.isBossMusicPlaying ? 0.1 : 0.06, t);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, t + noteDuration);
+        // 1. Pulsing Boss Bass Synth
+        const bassOsc = this.audioCtx.createOscillator();
+        const bassGain = this.audioCtx.createGain();
+        bassOsc.type = "sawtooth";
+        bassOsc.frequency.setValueAtTime(bassNotes[Math.floor(step / 2) % bassNotes.length], now);
+        
+        bassGain.gain.setValueAtTime(0.12, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
-      bassOsc.connect(bassGain);
-      bassGain.connect(this.audioCtx.destination);
-      bassOsc.start(t);
-      bassOsc.stop(t + noteDuration);
+        bassOsc.connect(bassGain);
+        bassGain.connect(this.audioCtx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.2);
 
-      // 2. Arpeggio Lead Oscillator
-      const leadOsc = this.audioCtx.createOscillator();
-      const leadGain = this.audioCtx.createGain();
-      leadOsc.type = "square";
-      leadOsc.frequency.setValueAtTime(lNotes[this.songStep % lNotes.length], t);
+        // 2. High Retro Arpeggio Lead
+        const leadOsc = this.audioCtx.createOscillator();
+        const leadGain = this.audioCtx.createGain();
+        leadOsc.type = "square";
+        leadOsc.frequency.setValueAtTime(leadNotes[step % leadNotes.length], now);
 
-      leadGain.gain.setValueAtTime(0.05, t);
-      leadGain.gain.exponentialRampToValueAtTime(0.001, t + (noteDuration * 0.8));
+        leadGain.gain.setValueAtTime(0.08, now);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-      leadOsc.connect(leadGain);
-      leadGain.connect(this.audioCtx.destination);
-      leadOsc.start(t);
-      leadOsc.stop(t + (noteDuration * 0.8));
+        leadOsc.connect(leadGain);
+        leadGain.connect(this.audioCtx.destination);
+        leadOsc.start(now);
+        leadOsc.stop(now + 0.15);
 
-      this.songStep++;
-      this.nextNoteTime += noteDuration;
-    } catch (e) {
-      // Catch safety fallbacks
-      this.nextNoteTime += 0.25;
+        step++;
+      } catch (e) {
+        console.log("Boss synth tick error:", e);
+      }
+    }, 150); // Speed of the boss beat tempo
+  }
+
+  stopBossSynth() {
+    if (this.bossInterval) {
+      clearInterval(this.bossInterval);
+      this.bossInterval = null;
     }
   }
 
@@ -135,7 +138,7 @@ class AudioController {
     osc.type = "square";
     osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.12, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
     gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
     osc.connect(gain);
     gain.connect(this.audioCtx.destination);
@@ -152,7 +155,7 @@ class AudioController {
     osc.type = "sawtooth";
     osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
     osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
-    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
     gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
     osc.connect(gain);
     gain.connect(this.audioCtx.destination);
@@ -164,7 +167,7 @@ class AudioController {
     if (!this.sfxEnabled) return;
     this.init();
     if (!this.audioCtx) return;
-    const bufferSize = this.audioCtx.sampleRate * 0.25;
+    const bufferSize = this.audioCtx.sampleRate * 0.3;
     const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -174,11 +177,11 @@ class AudioController {
     noise.buffer = buffer;
     const filter = this.audioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(isAsteroid ? 350 : 700, this.audioCtx.currentTime);
-    filter.frequency.linearRampToValueAtTime(40, this.audioCtx.currentTime + 0.25);
+    filter.frequency.setValueAtTime(isAsteroid ? 400 : 800, this.audioCtx.currentTime);
+    filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.3);
     const gain = this.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.audioCtx.destination);
