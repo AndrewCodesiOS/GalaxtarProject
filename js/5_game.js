@@ -678,21 +678,29 @@ class ExploreGameEngine {
 
   spawnHydraWave3x3() {
     if (!this.boss) return;
-    const offsets = [-75, 0, 75];
-    offsets.forEach(offset => {
+    const hoverOffsets = [
+      { ox: -65, oy: -25 },
+      { ox: 0, oy: -40 },
+      { ox: 65, oy: -25 }
+    ];
+    hoverOffsets.forEach((pos, idx) => {
       this.enemies.push({
         typeKey: "normal",
-        x: Math.max(40, Math.min(this.canvas.width - 40, this.boss.x + offset)),
-        y: this.boss.y + this.boss.h,
-        w: 28,
-        h: 28,
+        isHydraMinion: true,
+        minionIndex: idx,
+        offsetX: pos.ox,
+        offsetY: pos.oy,
+        x: this.boss.x + pos.ox,
+        y: this.boss.y + pos.oy,
+        w: 30,
+        h: 30,
         color: "#b033ff",
         shape: "square",
-        hp: 3,
-        points: 2,
+        hp: 12,
+        points: 4,
         shotTimer: Math.random() * 1.0,
         vx: 0,
-        vy: 100,
+        vy: 0,
         isDodging: false
       });
     });
@@ -1026,6 +1034,24 @@ class ExploreGameEngine {
 
     const enemySpeedMult = 1.0;
     this.enemies = this.enemies.filter(e => {
+      if (e.isHydraMinion) {
+        if (this.isBossActive && this.boss) {
+          const bob = Math.sin(performance.now() * 0.006 + e.minionIndex) * 8;
+          e.x = this.boss.x + e.offsetX;
+          e.y = this.boss.y + e.offsetY + bob;
+        } else {
+          e.y += 150 * enemySpeedMult * dt;
+        }
+        if (!this.isGameOver && e.y < this.ship.y) {
+          e.shotTimer += dt;
+          if (e.shotTimer >= 1.4) {
+            e.shotTimer = 0;
+            this.enemyShoot(e);
+          }
+        }
+        return this.isBossActive && this.boss ? true : (e.y < this.canvas.height + e.h);
+      }
+
       if (d.isPeacefulMode) {
         e.y += 150 * enemySpeedMult * dt;
         return e.y < this.canvas.height + e.h;
