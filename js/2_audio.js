@@ -42,14 +42,14 @@ class AudioController {
   switchToBossMusic() {
     this.isBossMusicPlaying = true;
     if (this.musicEnabled) {
-      this.startMusic();
+      this.startMusic(); // Restarts the loop instantly with the boss tempo/notes
     }
   }
 
   switchToNormalMusic() {
     this.isBossMusicPlaying = false;
     if (this.musicEnabled) {
-      this.startMusic();
+      this.startMusic(); // Restarts the loop instantly with the normal exploration tempo/notes
     }
   }
 
@@ -61,13 +61,17 @@ class AudioController {
       this.musicTimerId = null;
     }
 
-    const normalBass = [130.81, 98.00, 110.00, 87.31];
+    // Normal exploration groove (chill, sweeping arpeggios)
+    const normalBass = [130.81, 98.00, 110.00, 87.31]; 
     const normalLead = [261.63, 329.63, 392.00, 523.25];
-    const bossBass = [110.00, 110.00, 130.81, 98.00];
+
+    // Intense boss battle groove (frantic, aggressive pulsing)
+    const bossBass = [110.00, 110.00, 130.81, 98.00]; 
     const bossLead = [220.00, 329.63, 440.00, 523.25, 440.00, 329.63];
 
     let step = 0;
-    const intervalTime = this.isBossMusicPlaying ? 180 : 280; // Slower, clean interval to prevent locking UI
+    // Normal music has a relaxed tempo (300ms), boss music is fast and tense (160ms)
+    const intervalTime = this.isBossMusicPlaying ? 160 : 300;
 
     this.musicTimerId = setInterval(() => {
       if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
@@ -77,37 +81,37 @@ class AudioController {
         const bNotes = this.isBossMusicPlaying ? bossBass : normalBass;
         const lNotes = this.isBossMusicPlaying ? bossLead : normalLead;
 
-        // Bass Note
+        // Bass Synth Tone
         const osc1 = this.audioCtx.createOscillator();
         const gain1 = this.audioCtx.createGain();
         osc1.type = this.isBossMusicPlaying ? "sawtooth" : "triangle";
         osc1.frequency.setValueAtTime(bNotes[Math.floor(step / 2) % bNotes.length], now);
         
-        gain1.gain.setValueAtTime(0.08, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        gain1.gain.setValueAtTime(this.isBossMusicPlaying ? 0.09 : 0.06, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
         osc1.connect(gain1);
         gain1.connect(this.audioCtx.destination);
         osc1.start(now);
-        osc1.stop(now + 0.15);
+        osc1.stop(now + 0.2);
 
-        // Lead Note
+        // Arpeggio Lead Tone
         const osc2 = this.audioCtx.createOscillator();
         const gain2 = this.audioCtx.createGain();
         osc2.type = "square";
         osc2.frequency.setValueAtTime(lNotes[step % lNotes.length], now);
 
         gain2.gain.setValueAtTime(0.05, now);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
         osc2.connect(gain2);
         gain2.connect(this.audioCtx.destination);
         osc2.start(now);
-        osc2.stop(now + 0.1);
+        osc2.stop(now + 0.12);
 
         step++;
       } catch (err) {
-        // Silently catch any timing dropouts
+        // Silently catch timing dropouts
       }
     }, intervalTime);
   }
