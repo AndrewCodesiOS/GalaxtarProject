@@ -54,6 +54,7 @@ const GALAXTAR_DATA = {
       name: "Fuel Scavenger",
       rarity: "COMMON",
       color: "#2ecc71",
+      price: 25,
       weight: 30,
       desc: "Asteroids restore +40% bonus fuel when destroyed."
     },
@@ -62,6 +63,7 @@ const GALAXTAR_DATA = {
       name: "Bounty Scanner",
       rarity: "COMMON",
       color: "#2ecc71",
+      price: 25,
       weight: 30,
       desc: "Earn +25% bonus points from all ships and asteroids."
     },
@@ -70,6 +72,7 @@ const GALAXTAR_DATA = {
       name: "Reinforced Plating",
       rarity: "COMMON",
       color: "#2ecc71",
+      price: 25,
       weight: 25,
       desc: "Start the flight with +2 bonus Shield HP."
     },
@@ -78,6 +81,7 @@ const GALAXTAR_DATA = {
       name: "Cryo-Regulator",
       rarity: "RARE",
       color: "#3498db",
+      price: 50,
       weight: 18,
       desc: "Reduces passive fuel burn over distance by 25%."
     },
@@ -86,6 +90,7 @@ const GALAXTAR_DATA = {
       name: "Overclock Core",
       rarity: "RARE",
       color: "#9b59b6",
+      price: 50,
       weight: 15,
       desc: "Increases projectile speed by 25% and adds +1 bullet damage."
     },
@@ -94,6 +99,7 @@ const GALAXTAR_DATA = {
       name: "Phoenix Protocol",
       rarity: "EPIC",
       color: "#f1c40f",
+      price: 150,
       weight: 7,
       desc: "Survive 1 fatal hit with full HP restored and a screen-clearing blast."
     }
