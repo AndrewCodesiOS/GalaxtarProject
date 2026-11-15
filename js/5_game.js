@@ -703,7 +703,7 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone smooth player-relative floating behavior & laser firing
+      // AI Drone smooth player-relative floating behavior & smart target-seeking laser firing
       if (this.hasAiDrone && this.drone) {
         const targetX = this.ship.x + 45;
         const targetY = this.ship.y + 15;
@@ -713,14 +713,54 @@ class ExploreGameEngine {
         this.drone.fireTimer += dt;
         if (this.drone.fireTimer >= 0.35) {
           this.drone.fireTimer = 0;
-          this.droneBeams.push({
-            x: this.drone.x,
-            y: this.drone.y - 12,
-            length: 22,
-            speed: 380,
-            color: d.selectedDroneColor || d.selectedShipColor, // Matches selected drone color or ship color
-            damage: 0.5
-          });
+
+          // Scan for targets within a 350-pixel radius
+          let target = null;
+          let closestDist = 350;
+
+          if (this.isBossActive && this.boss) {
+            const dist = Math.hypot(this.boss.x - this.drone.x, this.boss.y - this.drone.y);
+            if (dist < closestDist) {
+              closestDist = dist;
+              target = this.boss;
+            }
+          }
+
+          if (!target) {
+            for (const e of this.enemies) {
+              if (e.y < this.drone.y + 100) {
+                const dist = Math.hypot(e.x - this.drone.x, e.y - this.drone.y);
+                if (dist < closestDist) {
+                  closestDist = dist;
+                  target = e;
+                }
+              }
+            }
+          }
+
+          if (!target) {
+            for (const a of this.asteroids) {
+              if (a.y < this.drone.y + 100) {
+                const dist = Math.hypot(a.x - this.drone.x, a.y - this.drone.y);
+                if (dist < closestDist) {
+                  closestDist = dist;
+                  target = a;
+                }
+              }
+            }
+          }
+
+          // Only fire when a valid target is within range
+          if (target) {
+            this.droneBeams.push({
+              x: this.drone.x,
+              y: this.drone.y - 12,
+              length: 22,
+              speed: 380,
+              color: d.selectedDroneColor || d.selectedShipColor,
+              damage: 0.5
+            });
+          }
         }
       }
 
