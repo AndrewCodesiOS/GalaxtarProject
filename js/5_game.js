@@ -196,20 +196,24 @@ class ExploreGameEngine {
     window.addEventListener("touchcancel", onUp);
   }
 
-  startSession() {
+  startSession(activeModules = []) {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
 
+    this.activeModules = new Set(activeModules);
+    this.phoenixAvailable = this.activeModules.has("phoenix_protocol");
+
     const d = this.stats.data;
     const shieldInfo = GALAXTAR_DATA.shieldLevels[d.shieldLevel - 1];
+    const bonusHP = this.activeModules.has("reinforced_hull") ? 2 : 0;
 
     this.ship = {
       x: this.canvas.width / 2,
       y: this.canvas.height * 0.72,
       w: d.selectedShipShape === "octagon" ? 50 : d.selectedShipShape === "square" ? 55 : 50,
       h: d.selectedShipShape === "octagon" ? 50 : d.selectedShipShape === "square" ? 55 : 60,
-      hp: shieldInfo.maxHP,
-      maxHP: shieldInfo.maxHP,
+      hp: shieldInfo.maxHP + bonusHP,
+      maxHP: shieldInfo.maxHP + bonusHP,
       hasRegen: shieldInfo.regen
     };
 
@@ -317,15 +321,19 @@ class ExploreGameEngine {
     }
 
     const color = this.stats.data.selectedShipColor;
+    const isOverclocked = this.activeModules && this.activeModules.has("overclock_core");
+    const bSpeed = isOverclocked ? 650 : 520;
+    const bonusDmg = isOverclocked ? 1 : 0;
+
     const spawnB = (ox, size, dmg) => {
       const heat = wLvl === 5 && Math.random() <= 0.15;
       this.bullets.push({
         x: this.ship.x + ox,
         y: this.ship.y - this.ship.h / 2,
         size,
-        speed: 520,
+        speed: bSpeed,
         color,
-        damage: dmg,
+        damage: dmg + bonusDmg,
         isHeatSeeking: heat
       });
     };
@@ -346,13 +354,14 @@ class ExploreGameEngine {
   fireChargeBeam() {
     this.isCharging = false;
     const color = this.stats.data.selectedShipColor;
+    const isOverclocked = this.activeModules && this.activeModules.has("overclock_core");
     this.chargeBullets.push({
       x: this.ship.x,
       y: this.ship.y - this.ship.h / 2,
       size: 26,
       speed: 620,
       color,
-      damage: 4
+      damage: 4 + (isOverclocked ? 1 : 0)
     });
     this.audio.playChargeBeamSound();
   }
@@ -699,7 +708,10 @@ class ExploreGameEngine {
       if (!d.isPeacefulMode) {
         this.fuelTimer += dt;
         if (this.fuelTimer >= 2.0) {
-          const baseCost = d.isHardcoreMode ? 5 : 3;
+          let baseCost = d.isHardcoreMode ? 5 : 3;
+          if (this.activeModules && this.activeModules.has("cryo_thrusters")) {
+            baseCost *= 0.75;
+          }
           this.stats.consumeFuel(baseCost);
           this.fuelTimer = 0;
         }
@@ -1004,7 +1016,10 @@ class ExploreGameEngine {
           if (e.hp <= 0) {
             const pts = e.points;
             this.sessionShips++;
-            if (!d.isPeacefulMode) this.sessionPoints += pts;
+            if (!d.isPeacefulMode) {
+              const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
+              this.sessionPoints += Math.ceil(pts * pointMult);
+            }
             this.audio.playExplosion(false);
             this.spawnExplosion(e.x, e.y, e.color, 24);
             this.enemies.splice(j, 1);
@@ -1042,7 +1057,10 @@ class ExploreGameEngine {
           if (e.hp <= 0) {
             const pts = e.points;
             this.sessionShips++;
-            if (!d.isPeacefulMode) this.sessionPoints += pts;
+            if (!d.isPeacefulMode) {
+              const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
+              this.sessionPoints += Math.ceil(pts * pointMult);
+            }
             this.audio.playExplosion(false);
             this.spawnExplosion(e.x, e.y, e.color, 26);
             this.enemies.splice(j, 1);
@@ -1079,7 +1097,10 @@ class ExploreGameEngine {
       if (hitBox(e.x, e.y, e.w * 0.85, e.h * 0.85, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
         const pts = e.points;
         this.sessionShips++;
-        if (!d.isPeacefulMode) this.sessionPoints += pts;
+        if (!d.isPeacefulMode) {
+          const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
+          this.sessionPoints += Math.ceil(pts * pointMult);
+        }
         this.spawnExplosion(e.x, e.y, e.color, 24);
         this.enemies.splice(i, 1);
         this.damagePlayer(999);
@@ -1104,7 +1125,9 @@ class ExploreGameEngine {
     this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 60);
 
     const rewards = { 20000: 50, 40000: 100, 60000: 175, 80000: 250, 100000: 500 };
-    this.sessionPoints += rewards[tier] || 50;
+    const baseReward = rewards[tier] || 50;
+    const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
+    this.sessionPoints += Math.ceil(baseReward * pointMult);
     this.sessionShips++;
 
     if (tier === 20000) this.bossDefeatedAt20k = true;
@@ -1124,9 +1147,12 @@ class ExploreGameEngine {
   destroyAsteroid(index) {
     const a = this.asteroids[index];
     const d = this.stats.data;
-    d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + a.fuelReward);
+    const fuelMult = (this.activeModules && this.activeModules.has("fuel_scavenger")) ? 1.4 : 1;
+    const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
+
+    d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + Math.ceil(a.fuelReward * fuelMult));
     if (!d.isPeacefulMode) {
-      this.sessionPoints += a.pointReward;
+      this.sessionPoints += Math.ceil(a.pointReward * pointMult);
     }
     this.sessionAsteroids++;
     this.stats.save();
@@ -1140,6 +1166,17 @@ class ExploreGameEngine {
     this.isInvulnerable = true;
     this.invulnTimer = 0.5;
     if (this.ship.hp <= 0) {
+      if (this.phoenixAvailable) {
+        this.phoenixAvailable = false;
+        this.ship.hp = this.ship.maxHP;
+        this.invulnTimer = 2.0;
+        this.enemyBullets = [];
+        this.enemies.forEach(e => this.spawnExplosion(e.x, e.y, e.color, 20));
+        this.enemies = [];
+        this.audio.playChargeBeamSound();
+        this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 45);
+        return;
+      }
       this.audio.switchToNormalMusic();
       this.triggerGameOver(false);
     }
