@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+Document.addEventListener("DOMContentLoaded", () => {
   // Register Service Worker for PWA Installation
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
@@ -358,7 +358,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnContinue) {
     btnContinue.addEventListener("click", () => {
       document.getElementById("gameover-overlay").classList.add("hidden");
-      if (lastRunResult && !lastRunResult.isPeaceful) {
+      
+      // Hidden 10,000m requirement check for post-flight shop display
+      if (lastRunResult && !lastRunResult.isPeaceful && lastRunResult.distance >= 10000) {
         currentShopOfferings = getRandomShopOfferings().map(m => ({ ...m, purchased: false }));
         renderShopModal();
         if (moduleShopModal) {
