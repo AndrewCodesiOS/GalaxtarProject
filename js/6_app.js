@@ -783,10 +783,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Pilot's Guide Navigation
   const guidePages = [
-    { title: "Mission Objective", text: "Welcome to GALAXTAR. You pilot a deep-space research vessel through an endless cosmic expanse.\n\nSurvive as long as you can, destroy incoming hostile ships and asteroids, collect points, and upgrade your ship." },
-    { title: "Flight Controls", text: "Drag your ship directly to steer smoothly.\n- Tap anywhere else on screen to shoot lasers." },
-    { title: "Fuel & Asteroids", text: "Your ship constantly consumes fuel as you travel.\n\nShoot and destroy drifting asteroids to replenish your fuel reserves, earn points, and avoid hull damage.\n\nTap the fuel gauge on the main menu to refuel!" },
-    { title: "Combat & Upgrades", text: "Enemies and bosses will attack as you travel deeper into space. Defeat them to earn points.\n\nSpend earned points in the Upgrades menu to enhance your Fuel Capacity, Shield Strength, Weapon Firepower, and Thruster Speed, as well as customize ship colors and shapes." }
+    { 
+      title: "1. MISSION BRIEFING", 
+      text: "Welcome to GALAXTAR, Pilot.\n\nYou command an advanced deep-space research vessel navigating an infinite, shifting cosmic expanse. Your directive is simple: push deeper into the void and go as far as you can, eliminating hostile ships, harvestesting asteroid resources, and defesting Bosses as you traverse as far ss your ship will take you.\n\nYour ship can be upgraded to increase fuel capacity, shields, firepower, and speed boost. Along the way you will collect single-use Modules that can be stacked up to 3 to use on a flight."  
+    },
+    { 
+      title: "2. FLIGHT & COMBAT", 
+      text: "STEERING:\nDrag anywhere on screen for smooth, precise vector control.\n\nFIRE:\nTap anywhere outside your ship to fire your lasers. Unlocking advanced weapon upgrades will introduc, multi-shot spreads, charge beams, and heat-seeking projectiles.\n\n
+    },
+    { 
+      title: "3. FUEL & RESOURCES", 
+      text: "Your engines burn fuel continuously as you travel. Running on empty will leave you stranded in deep space.\n\n- Destroy drifting asteroids to scavenge fuel and points.\n- High-tier reactor upgrades unlock solar charging over time.\n- Tap the fuel gauge on the main menu to top off your reserves using earned points before launch." 
+    },
+    { 
+      title: "4. MODULES & HANGAR", 
+      text: "After flights you may access the Telemetry Shop upon your return.\n\n- Purchase single-run modules (Common, Rare, and Epic) to gain powerful tactical perks.\n- Select up to 3 unique modules in your pre-flight loadout to customize your build.\n- Modules are consumed upon flight completion, keeping every run fresh and tactical." 
+    }
   ];
   let currentGuidePage = 0;
 
