@@ -222,13 +222,12 @@ class ExploreGameEngine {
       hasRegen: shieldInfo.regen
     };
 
-    // Initialize AI Drone with tracking capabilities
+    // Initialize AI Drone hovering nearby the player's ship
     this.drone = {
-      x: this.canvas.width / 2,
-      y: this.canvas.height - 120,
+      x: this.ship.x + 45,
+      y: this.ship.y + 15,
       w: 26,
       h: 26,
-      vx: 180,
       fireTimer: 0
     };
 
@@ -704,46 +703,23 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone Active Target Tracking with Screen-Clamp Boundaries
+      // AI Drone smooth player-relative floating behavior & laser firing
       if (this.hasAiDrone && this.drone) {
-        let targetX = null;
-        if (this.isBossActive && this.boss) {
-          targetX = this.boss.x;
-        } else if (this.enemies.length > 0) {
-          let closest = this.enemies[0];
-          let minDist = Infinity;
-          for (const e of this.enemies) {
-            const dist = Math.hypot(e.x - this.drone.x, e.y - this.drone.y);
-            if (dist < minDist) {
-              minDist = dist;
-              closest = e;
-            }
-          }
-          targetX = closest.x;
-        }
-
-        if (targetX !== null) {
-          const dir = Math.sign(targetX - this.drone.x);
-          this.drone.x += dir * this.drone.vx * 1.2 * dt;
-        } else {
-          this.drone.x += this.drone.vx * dt;
-          if (this.drone.x < 50 || this.drone.x > this.canvas.width - 50) {
-            this.drone.vx *= -1;
-          }
-        }
-        // Strict boundary clamp so the drone never gets pinned against screen edges
-        this.drone.x = Math.max(40, Math.min(this.canvas.width - 40, this.drone.x));
+        const targetX = this.ship.x + 45;
+        const targetY = this.ship.y + 15;
+        this.drone.x += (targetX - this.drone.x) * 8 * dt;
+        this.drone.y += (targetY - this.drone.y) * 8 * dt;
 
         this.drone.fireTimer += dt;
-        if (this.drone.fireTimer >= 0.3) {
+        if (this.drone.fireTimer >= 0.35) {
           this.drone.fireTimer = 0;
           this.droneBeams.push({
             x: this.drone.x,
             y: this.drone.y - 12,
-            length: 24,
-            speed: 750,
+            length: 22,
+            speed: 380, // Slower, balanced speed
             color: "#00f0ff",
-            damage: 2
+            damage: 1 // 1 HP damage per hit
           });
         }
       }
@@ -1139,7 +1115,7 @@ class ExploreGameEngine {
       if (consumed) this.bullets.splice(i, 1);
     }
 
-    // Handle AI Drone Beam Collisions
+    // Handle AI Drone Beam Collisions (1 HP damage)
     for (let i = this.droneBeams.length - 1; i >= 0; i--) {
       const b = this.droneBeams[i];
       let consumed = false;
