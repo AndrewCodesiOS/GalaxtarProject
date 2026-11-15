@@ -60,22 +60,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Fuel Widget & Expansion
+  // Fuel Widget & Expansion Elements
   const fuelIcon = document.getElementById("btn-fuel-icon");
   const fuelExpansion = document.getElementById("fuel-expansion");
   const fuelText = document.getElementById("fuel-text");
   const btnRefuel = document.getElementById("btn-refuel");
 
-  function updateFuelWidget() {
+  // Define updateFuelWidget globally so it can be called anywhere
+  window.updateFuelWidget = function() {
     const current = Math.floor(stats.data.currentFuel);
     const max = stats.maxFuel();
     if (fuelText) fuelText.innerText = `${current}/${max}`;
+    
     const percent = Math.max(0, Math.min(100, (current / max) * 100));
     const fuelRing = document.getElementById("fuel-ring");
     if (fuelRing) {
+      fuelRing.style.transition = "none";
       fuelRing.style.strokeDasharray = `${percent}, 100`;
-      // Force a synchronous layout reflow so the SVG updates immediately on load
-      void fuelRing.getBoundingClientRect();
+      void fuelRing.getBoundingClientRect(); // Force reflow
+      requestAnimationFrame(() => {
+        fuelRing.style.transition = "stroke-dasharray 0.3s ease";
+      });
     }
 
     const missing = max - current;
@@ -91,12 +96,17 @@ document.addEventListener("DOMContentLoaded", () => {
         btnRefuel.classList.add("hidden");
       }
     }
-  }
+  };
+
+  // Run immediately and queue a double-check frame to catch browser layout paint
+  window.updateFuelWidget();
+  requestAnimationFrame(() => window.updateFuelWidget());
+  setTimeout(() => window.updateFuelWidget(), 100);
 
   if (fuelIcon) {
     fuelIcon.addEventListener("click", e => {
       e.stopPropagation();
-      updateFuelWidget();
+      window.updateFuelWidget();
       if (fuelExpansion) fuelExpansion.classList.toggle("hidden");
     });
   }
@@ -115,20 +125,15 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.data.totalPoints -= cost;
         stats.data.currentFuel = max;
         stats.save();
-        updateFuelWidget();
+        window.updateFuelWidget();
       }
     });
   }
-
-  // Immediately update and force reflow on startup
-  updateFuelWidget();
-  setTimeout(updateFuelWidget, 50);
 
   // Menu Buttons
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
     btnLaunch.addEventListener("click", () => {
-      // Double check name is set before launch
       if (!stats.data.pilotName || stats.data.pilotName.trim() === "") {
         if (introModal) introModal.classList.remove("hidden");
         return;
@@ -533,16 +538,11 @@ document.addEventListener("DOMContentLoaded", () => {
         setToggleState(idPrefix, true);
         if (onChange) onChange(true);
 
-        // Cheat Sequence Progress:
-        // After Step 3 (Cancel), turning SFX ON advances to Step 4
         if (settingKey === "sfxOn" && cheatStep === 3) {
           cheatStep = 4;
-        } 
-        // After Step 4, turning Music ON advances to Step 5
-        else if (settingKey === "musicOn" && cheatStep === 4) {
+        } else if (settingKey === "musicOn" && cheatStep === 4) {
           cheatStep = 5;
         } else if (cheatStep < 3) {
-          // If toggled out of order early on, reset
           cheatStep = 0;
         }
       });
@@ -566,12 +566,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const d = stats.data;
       const allOff = !d.isPeacefulMode && !d.isHardcoreMode && !d.sfxOn && !d.musicOn;
 
-      // Step 0: If all four are off and we hit reset prompt -> Step 1
       if (cheatStep === 0 && allOff) {
         cheatStep = 1;
-      } 
-      // Step 5: If we hit reset prompt again after turning SFX and Music on -> Step 6
-      else if (cheatStep === 5) {
+      } else if (cheatStep === 5) {
         cheatStep = 6;
       } else {
         cheatStep = 0;
@@ -583,13 +580,9 @@ document.addEventListener("DOMContentLoaded", () => {
     resetCancelBtn.addEventListener("click", () => {
       resetConfirmBox.classList.add("hidden");
 
-      // Step 1: If we hit cancel -> Step 2 (waiting for SFX on)
       if (cheatStep === 1) {
-        cheatStep = 2; // (we can also accept SFX on immediately at step 2 or 3)
-        cheatStep = 3; // Ready for SFX & Music
-      } 
-      // Step 6: If we hit cancel on the second prompt -> SUCCESS!
-      else if (cheatStep === 6) {
+        cheatStep = 3;
+      } else if (cheatStep === 6) {
         stats.data.totalPoints += 50000;
         stats.data.lifetimePointsEarned += 50000;
         stats.save();
