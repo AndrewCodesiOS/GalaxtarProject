@@ -68,13 +68,13 @@ class ExploreGameEngine {
     this.isGameOver = false;
     this.isManualEnd = false;
 
-    // Boss State Properties & Milestone Trackers
+    // Boss State Properties & Milestone Trackers (Updated for 40k, 80k, 120k, 160k, 200k)
     this.isBossActive = false;
-    this.bossDefeatedAt20k = false;
     this.bossDefeatedAt40k = false;
-    this.bossDefeatedAt60k = false;
     this.bossDefeatedAt80k = false;
-    this.bossDefeatedAt100k = false;
+    this.bossDefeatedAt120k = false;
+    this.bossDefeatedAt160k = false;
+    this.bossDefeatedAt200k = false;
     this.boss = null;
     this.solarFirewalls = [];
 
@@ -249,11 +249,11 @@ class ExploreGameEngine {
     this.hasMovedDistance = false;
 
     this.isBossActive = false;
-    this.bossDefeatedAt20k = false;
     this.bossDefeatedAt40k = false;
-    this.bossDefeatedAt60k = false;
     this.bossDefeatedAt80k = false;
-    this.bossDefeatedAt100k = false;
+    this.bossDefeatedAt120k = false;
+    this.bossDefeatedAt160k = false;
+    this.bossDefeatedAt200k = false;
     this.boss = null;
 
     for (let i = 0; i < 85; i++) {
@@ -386,10 +386,10 @@ class ExploreGameEngine {
     if (this.enemies.some(e => Math.hypot(e.x - x, e.y - y) < 120)) return;
 
     let mirror = 0.01, blue = 0.02, orange = 0.02, green = 0.05, purple = 0.05;
-    if (this.distance >= 20000) {
+    if (this.distance >= 40000) {
       mirror = 0.02; blue = 0.03; orange = 0.03; green = 0.06; purple = 0.06;
     }
-    if (this.distance >= 50000) {
+    if (this.distance >= 120000) {
       blue = 0.04; orange = 0.04;
     }
 
@@ -483,9 +483,9 @@ class ExploreGameEngine {
     this.enemies = [];
     this.asteroids = [];
 
-    if (tier === 20000) {
+    if (tier === 40000) {
       this.boss = {
-        tier: 20000,
+        tier: 40000,
         name: "ASTRAL TITAN (MK I)",
         x: this.canvas.width / 2,
         y: 120,
@@ -498,9 +498,9 @@ class ExploreGameEngine {
         shape: "octagon",
         attackTimer: 0
       };
-    } else if (tier === 40000) {
+    } else if (tier === 80000) {
       this.boss = {
-        tier: 40000,
+        tier: 80000,
         name: "VORTEX INTERCEPTOR 'THE SINGULARITY CORE'",
         x: this.canvas.width / 2,
         y: 100,
@@ -514,10 +514,10 @@ class ExploreGameEngine {
         attackTimer: 0,
         timer: 0
       };
-    } else if (tier === 60000) {
+    } else if (tier === 120000) {
       this.solarFirewalls = [];
       this.boss = {
-        tier: 60000,
+        tier: 120000,
         name: "SOLAR DREADNOUGHT 'HELIOS PHOENIX'",
         x: this.canvas.width / 2,
         y: 110,
@@ -531,9 +531,9 @@ class ExploreGameEngine {
         attackTimer: 0,
         firewallTimer: 0
       };
-    } else if (tier === 80000) {
+    } else if (tier === 160000) {
       this.boss = {
-        tier: 80000,
+        tier: 160000,
         name: "QUANTUM SWARM MATRIX 'HYDRA-9'",
         x: this.canvas.width / 2,
         y: 120,
@@ -547,9 +547,9 @@ class ExploreGameEngine {
         attackTimer: 0,
         orbitAngle: 0
       };
-    } else if (tier === 100000) {
+    } else if (tier === 200000) {
       this.boss = {
-        tier: 100000,
+        tier: 200000,
         name: "THE VOID ARCHITECT 'ETERNITY ENGINE'",
         x: this.canvas.width / 2,
         y: 100,
@@ -572,7 +572,7 @@ class ExploreGameEngine {
     if (!this.boss) return;
     const spd = 280;
 
-    if (this.boss.tier === 20000) {
+    if (this.boss.tier === 40000) {
       [-0.5, -0.25, 0, 0.25, 0.5].forEach(ang => {
         this.enemyBullets.push({
           x: this.boss.x + (ang * 60),
@@ -583,7 +583,7 @@ class ExploreGameEngine {
           color: "#ff3366"
         });
       });
-    } else if (this.boss.tier === 40000) {
+    } else if (this.boss.tier === 80000) {
       const numBullets = 10;
       for (let i = 0; i < numBullets; i++) {
         const angle = (Math.PI * 2 / numBullets) * i;
@@ -596,7 +596,7 @@ class ExploreGameEngine {
           color: "#00ffff"
         });
       }
-    } else if (this.boss.tier === 60000) {
+    } else if (this.boss.tier === 120000) {
       [-0.6, -0.3, 0, 0.3, 0.6].forEach(ang => {
         this.enemyBullets.push({
           x: this.boss.x,
@@ -614,7 +614,7 @@ class ExploreGameEngine {
         h: 16,
         life: 5.0
       });
-    } else if (this.boss.tier === 80000) {
+    } else if (this.boss.tier === 160000) {
       for (let i = -3; i <= 3; i++) {
         this.enemyBullets.push({
           x: this.boss.x + (i * 20),
@@ -625,11 +625,10 @@ class ExploreGameEngine {
           color: "#9900ff"
         });
       }
-    } else if (this.boss.tier === 100000) {
+    } else if (this.boss.tier === 200000) {
       if (this.boss.hp <= 300) this.boss.phase = 2;
       
       if (this.boss.phase === 2) {
-        // Two red bullet bursts, short pause, then two red bullet bursts pattern
         const fireBurst = () => {
           const spread = 7;
           for (let i = -spread; i <= spread; i++) {
@@ -648,7 +647,6 @@ class ExploreGameEngine {
         this.boss.burstStep = (this.boss.burstStep || 0) + 1;
 
         if (this.boss.burstStep === 2) {
-          // Pause longer after the second burst before starting the next pair
           this.boss.attackTimer = -0.6;
           this.boss.burstStep = 0;
         }
@@ -708,16 +706,16 @@ class ExploreGameEngine {
         this.elapsedTime += dt;
         this.distance += 220 * passiveDistanceMultiplier * dt;
 
-        if (this.distance >= 20000 && !this.bossDefeatedAt20k && !this.isBossActive) {
-          this.triggerMegaBoss(20000);
-        } else if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
+        if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
           this.triggerMegaBoss(40000);
-        } else if (this.distance >= 60000 && !this.bossDefeatedAt60k && !this.isBossActive) {
-          this.triggerMegaBoss(60000);
         } else if (this.distance >= 80000 && !this.bossDefeatedAt80k && !this.isBossActive) {
           this.triggerMegaBoss(80000);
-        } else if (this.distance >= 100000 && !this.bossDefeatedAt100k && !this.isBossActive) {
-          this.triggerMegaBoss(100000);
+        } else if (this.distance >= 120000 && !this.bossDefeatedAt120k && !this.isBossActive) {
+          this.triggerMegaBoss(120000);
+        } else if (this.distance >= 160000 && !this.bossDefeatedAt160k && !this.isBossActive) {
+          this.triggerMegaBoss(160000);
+        } else if (this.distance >= 200000 && !this.bossDefeatedAt200k && !this.isBossActive) {
+          this.triggerMegaBoss(200000);
         }
       }
 
@@ -945,7 +943,7 @@ class ExploreGameEngine {
         this.boss.vx *= -1;
       }
 
-      if (this.boss.tier === 40000) {
+      if (this.boss.tier === 80000) {
         this.boss.timer++;
         const pullActive = Math.floor(this.boss.timer / 120) % 2 === 0;
         if (pullActive) {
@@ -956,7 +954,7 @@ class ExploreGameEngine {
         }
       }
 
-      if (this.boss.tier === 60000) {
+      if (this.boss.tier === 120000) {
         this.solarFirewalls.forEach(fw => {
           fw.life -= dt;
           if (Math.abs(this.ship.x - (fw.x + fw.w / 2)) < fw.w / 2 && Math.abs(this.ship.y - fw.y) < 15) {
@@ -967,7 +965,7 @@ class ExploreGameEngine {
       }
 
       this.boss.attackTimer += dt;
-      const attackInterval = this.boss.tier === 100000 && this.boss.phase === 2 ? 0.7 : 1.2;
+      const attackInterval = this.boss.tier === 200000 && this.boss.phase === 2 ? 0.7 : 1.2;
       if (this.boss.attackTimer >= attackInterval) {
         this.boss.attackTimer = 0;
         this.bossShoot();
@@ -1309,7 +1307,7 @@ class ExploreGameEngine {
     this.audio.playExplosion(false);
     this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 60);
 
-    const rewards = { 20000: 50, 40000: 100, 60000: 175, 80000: 250, 100000: 500 };
+    const rewards = { 40000: 50, 80000: 100, 120000: 175, 160000: 250, 200000: 500 };
     const baseReward = rewards[tier] || 50;
     
     let mult = 1;
@@ -1319,11 +1317,11 @@ class ExploreGameEngine {
     this.sessionPoints += Math.ceil(baseReward * mult);
     this.sessionShips++;
 
-    if (tier === 20000) this.bossDefeatedAt20k = true;
     if (tier === 40000) this.bossDefeatedAt40k = true;
-    if (tier === 60000) this.bossDefeatedAt60k = true;
     if (tier === 80000) this.bossDefeatedAt80k = true;
-    if (tier === 100000) this.bossDefeatedAt100k = true;
+    if (tier === 120000) this.bossDefeatedAt120k = true;
+    if (tier === 160000) this.bossDefeatedAt160k = true;
+    if (tier === 200000) this.bossDefeatedAt200k = true;
 
     this.boss = null;
     this.isBossActive = false;
