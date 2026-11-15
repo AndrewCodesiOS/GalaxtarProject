@@ -678,10 +678,11 @@ class ExploreGameEngine {
 
   spawnHydraWave3x3() {
     if (!this.boss) return;
+    // Spread them out more left-to-right underneath the Hydra body with horizontal oscillation
     const hoverOffsets = [
-      { ox: -65, oy: -25 },
-      { ox: 0, oy: -40 },
-      { ox: 65, oy: -25 }
+      { ox: -100, oy: 25 },
+      { ox: 0, oy: 35 },
+      { ox: 100, oy: 25 }
     ];
     hoverOffsets.forEach((pos, idx) => {
       this.enemies.push({
@@ -1036,8 +1037,10 @@ class ExploreGameEngine {
     this.enemies = this.enemies.filter(e => {
       if (e.isHydraMinion) {
         if (this.isBossActive && this.boss) {
-          const bob = Math.sin(performance.now() * 0.006 + e.minionIndex) * 8;
-          e.x = this.boss.x + e.offsetX;
+          // Patrol left to right underneath the boss body using cosine wave for smooth lateral movement
+          const lateralSway = Math.cos(performance.now() * 0.003 + e.minionIndex * 2.0) * 55;
+          const bob = Math.sin(performance.now() * 0.005 + e.minionIndex) * 6;
+          e.x = this.boss.x + e.offsetX + lateralSway;
           e.y = this.boss.y + e.offsetY + bob;
         } else {
           e.y += 150 * enemySpeedMult * dt;
