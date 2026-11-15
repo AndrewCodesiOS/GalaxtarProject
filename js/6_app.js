@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
           stats.data.currentFuel = max; // Fully fill their tank for free so they aren't trapped
           stats.save();
           window.updateFuelWidget();
-          alert("DISTRESS BEACON RECEIVED: Star Command has fully refueled your vessel pro bono to get you back into the void!");
+          alert("DISTRESS BEACON RECEIVED: Star Command has fully refueled your vessel on the house to get you back into the void!");
         }
       }
     });
