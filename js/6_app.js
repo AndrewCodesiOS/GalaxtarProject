@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = document.getElementById(viewId);
     if (target) {
       target.classList.add("active");
+      if (viewId === "view-menu") updateFuelWidget(); // Automatically updates the fuel ring whenever menu is shown
       if (viewId === "view-profile") updateProfileDisplay();
       if (viewId === "view-upgrades") updateUpgradesDisplay();
       if (viewId === "view-settings") updateSettingsDisplay();
@@ -98,10 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Run immediately and queue a double-check frame to catch browser layout paint
+  // Run immediately on startup
   window.updateFuelWidget();
-  requestAnimationFrame(() => window.updateFuelWidget());
-  setTimeout(() => window.updateFuelWidget(), 100);
 
   if (fuelIcon) {
     fuelIcon.addEventListener("click", e => {
