@@ -197,10 +197,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // End Flight from Pause Menu now triggers game over overlay sequence properly
+  // End Flight from Pause Menu now closes pause view and reveals game over overlay
   const btnEndFlight = document.getElementById("btn-end-flight");
   if (btnEndFlight) {
     btnEndFlight.addEventListener("click", () => {
+      showView("view-explore");
       gameEngine.triggerGameOver(true);
     });
   }
