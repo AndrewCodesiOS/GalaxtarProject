@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
   audio.musicEnabled = stats.data.musicOn;
   audio.sfxEnabled = stats.data.sfxOn;
 
-  // Unlock and start background music on the very first user interaction anywhere on the screen
   const unlockAudioOnFirstInteraction = () => {
     audio.init();
     if (stats.data.musicOn) {
@@ -39,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
     result => showGameOver(result)
   );
 
-  // Check if pilot name is set; if not, show mandatory intro modal
   const introModal = document.getElementById("intro-modal");
   const introNameInput = document.getElementById("intro-name-input");
   const btnIntroStart = document.getElementById("btn-intro-start");
@@ -73,13 +71,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Fuel Widget & Expansion Elements
   const fuelIcon = document.getElementById("btn-fuel-icon");
   const fuelExpansion = document.getElementById("fuel-expansion");
   const fuelText = document.getElementById("fuel-text");
   const btnRefuel = document.getElementById("btn-refuel");
 
-  // Define updateFuelWidget globally so it can be called anywhere
   window.updateFuelWidget = function() {
     const current = Math.floor(stats.data.currentFuel);
     const max = stats.maxFuel();
@@ -90,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fuelRing) {
       fuelRing.style.transition = "none";
       fuelRing.style.strokeDasharray = `${percent}, 100`;
-      void fuelRing.getBoundingClientRect(); // Force reflow
+      void fuelRing.getBoundingClientRect();
       requestAnimationFrame(() => {
         fuelRing.style.transition = "stroke-dasharray 0.3s ease";
       });
@@ -111,7 +107,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Run immediately on startup
   window.updateFuelWidget();
 
   if (fuelIcon) {
@@ -141,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Pre-Flight Module Loadout Modal Logic
+  // Pre-Flight Loadout Modal Logic
   const loadoutModal = document.getElementById("loadout-modal");
   const loadoutList = document.getElementById("loadout-list");
   const loadoutCount = document.getElementById("loadout-count");
@@ -163,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ownedModules = GALAXTAR_DATA.modules.filter(m => (inv[m.id] || 0) > 0);
 
     if (ownedModules.length === 0) {
-      loadoutList.innerHTML = `<p style="text-align: center; color: #777; padding: 18px; font-size: 0.85rem;">No modules in hangar.<br>Reach 10,000m in a flight to recover RNG modules!</p>`;
+      loadoutList.innerHTML = `<p style="text-align: center; color: #777; padding: 18px; font-size: 0.85rem;">No modules in hangar.<br>Complete flights to purchase modules from the post-flight telemetry shop!</p>`;
       return;
     }
 
@@ -209,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnConfirmLaunch.addEventListener("click", () => {
       if (loadoutModal) loadoutModal.classList.add("hidden");
       if (!stats.data.isPeacefulMode && selectedLoadoutModules.length > 0) {
-        stats.consumeModules(selectedLoadoutModules);
+        stats.consumeModules(selectedLoadoutModules); // Single-use consumption
       }
       const modulesToActivate = stats.data.isPeacefulMode ? [] : [...selectedLoadoutModules];
       showView("view-explore");
@@ -217,7 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Menu Buttons
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
     btnLaunch.addEventListener("click", () => {
@@ -289,7 +283,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // End Flight from Pause Menu now closes pause view and reveals game over overlay
   const btnEndFlight = document.getElementById("btn-end-flight");
   if (btnEndFlight) {
     btnEndFlight.addEventListener("click", () => {
@@ -298,24 +291,65 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Post-Flight Shop Logic (Offers 3 random modules to purchase)
   let lastRunResult = null;
-  const moduleRewardModal = document.getElementById("module-reward-modal");
-  const btnClaimModule = document.getElementById("btn-claim-module");
+  let currentShopOfferings = [];
+  const moduleShopModal = document.getElementById("module-shop-modal");
+  const shopPlayerPoints = document.getElementById("shop-player-points");
+  const moduleShopList = document.getElementById("module-shop-list");
+  const btnCloseShop = document.getElementById("btn-close-shop");
 
-  function rollRandomModule() {
-    const pool = GALAXTAR_DATA.modules;
-    const totalWeight = pool.reduce((sum, m) => sum + m.weight, 0);
-    let roll = Math.random() * totalWeight;
-    for (const mod of pool) {
-      if (roll < mod.weight) return mod;
-      roll -= mod.weight;
+  function getRandomShopOfferings() {
+    const pool = [...GALAXTAR_DATA.modules];
+    const offered = [];
+    for (let i = 0; i < 3; i++) {
+      if (pool.length === 0) break;
+      const index = Math.floor(Math.random() * pool.length);
+      offered.push(pool[index]);
+      pool.splice(index, 1);
     }
-    return pool[0];
+    return offered;
   }
 
-  if (btnClaimModule) {
-    btnClaimModule.addEventListener("click", () => {
-      if (moduleRewardModal) moduleRewardModal.classList.add("hidden");
+  function renderShopModal() {
+    if (!moduleShopList) return;
+    if (shopPlayerPoints) shopPlayerPoints.innerText = `Points Available: ${stats.data.totalPoints} pts`;
+
+    moduleShopList.innerHTML = currentShopOfferings.map((mod, idx) => {
+      const canAfford = stats.data.totalPoints >= mod.price;
+      const isPurchased = mod.purchased;
+
+      return `
+        <div class="shop-module-card ${isPurchased ? "purchased" : ""}">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.7rem; font-weight: bold; color: ${mod.color};">${mod.rarity}</span>
+            <span style="font-size: 0.85rem; font-weight: bold; color: #f1c40f;">${mod.price} pts</span>
+          </div>
+          <h4 style="color: #fff; font-size: 0.95rem; margin: 2px 0;">${mod.name}</h4>
+          <p style="font-size: 0.78rem; color: #ccc; line-height: 1.3;">${mod.desc}</p>
+          <button class="upgrade-btn ${isPurchased ? 'disabled' : (canAfford ? 'green' : 'disabled')}" ${isPurchased || !canAfford ? 'disabled' : ''} onclick="buyShopModule(${idx})">
+            ${isPurchased ? 'STORED IN HANGAR' : 'PURCHASE'}
+          </button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.buyShopModule = function(idx) {
+    const mod = currentShopOfferings[idx];
+    if (!mod || mod.purchased) return;
+    if (stats.data.totalPoints >= mod.price) {
+      stats.data.totalPoints -= mod.price;
+      stats.addModule(mod.id, 1);
+      mod.purchased = true;
+      stats.save();
+      renderShopModal();
+    }
+  };
+
+  if (btnCloseShop) {
+    btnCloseShop.addEventListener("click", () => {
+      if (moduleShopModal) moduleShopModal.classList.add("hidden");
       showView("view-menu");
     });
   }
@@ -324,22 +358,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnContinue) {
     btnContinue.addEventListener("click", () => {
       document.getElementById("gameover-overlay").classList.add("hidden");
-      if (lastRunResult && !lastRunResult.isPeaceful && lastRunResult.distance >= 10000) {
-        const awarded = rollRandomModule();
-        stats.addModule(awarded.id, 1);
-
-        const rarityEl = document.getElementById("reward-mod-rarity");
-        const nameEl = document.getElementById("reward-mod-name");
-        const descEl = document.getElementById("reward-mod-desc");
-        if (rarityEl) {
-          rarityEl.innerText = awarded.rarity;
-          rarityEl.style.color = awarded.color;
-        }
-        if (nameEl) nameEl.innerText = awarded.name;
-        if (descEl) descEl.innerText = awarded.desc;
-
-        if (moduleRewardModal) {
-          moduleRewardModal.classList.remove("hidden");
+      if (lastRunResult && !lastRunResult.isPeaceful) {
+        currentShopOfferings = getRandomShopOfferings().map(m => ({ ...m, purchased: false }));
+        renderShopModal();
+        if (moduleShopModal) {
+          moduleShopModal.classList.remove("hidden");
           return;
         }
       }
@@ -360,7 +383,6 @@ document.addEventListener("DOMContentLoaded", () => {
     lastRunResult = res;
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
-    
     const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
 
     if (grid) {
@@ -393,7 +415,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stat-obj-shooting").innerText = d.shootingStarsPassed || 0;
   }
 
-  // Profile View & Flip
   const profileBtn = document.getElementById("btn-player-profile");
   if (profileBtn) {
     profileBtn.addEventListener("click", () => showView("view-profile"));
@@ -467,7 +488,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Upgrades View
   let currentUpgradeCat = "fuel";
   document.querySelectorAll(".cat-tab").forEach(tab => {
     tab.addEventListener("click", () => {
@@ -622,7 +642,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Settings Toggles & Reset + Secret Cheat Code Logic
   let cheatStep = 0;
 
   function updateSettingsDisplay() {
@@ -696,7 +715,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (resetPromptBtn) {
     resetPromptBtn.addEventListener("click", () => {
       resetConfirmBox.classList.remove("hidden");
-      
       const d = stats.data;
       const allOff = !d.isPeacefulMode && !d.isHardcoreMode && !d.sfxOn && !d.musicOn;
 
@@ -713,7 +731,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (resetCancelBtn) {
     resetCancelBtn.addEventListener("click", () => {
       resetConfirmBox.classList.add("hidden");
-
       if (cheatStep === 1) {
         cheatStep = 3;
       } else if (cheatStep === 6) {
@@ -735,7 +752,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Mode Info Modal
   const infoModal = document.getElementById("info-modal");
   const infoTitle = document.getElementById("info-modal-title");
   const infoDesc = document.getElementById("info-modal-desc");
@@ -759,7 +775,6 @@ document.addEventListener("DOMContentLoaded", () => {
     infoDismiss.addEventListener("click", () => infoModal.classList.add("hidden"));
   }
 
-  // Pilot's Guide Navigation
   const guidePages = [
     { title: "Mission Objective", text: "Welcome to GALAXTAR. You pilot a deep-space research vessel through an endless cosmic expanse.\n\nSurvive as long as you can, destroy incoming hostile ships and asteroids, collect points, and upgrade your ship." },
     { title: "Flight Controls", text: "Drag your ship directly to steer smoothly.\n- Tap anywhere else on screen to shoot lasers." },
@@ -814,9 +829,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSettingsGuide = document.getElementById("btn-settings-guide");
   if (btnSettingsGuide) btnSettingsGuide.addEventListener("click", openGuide);
 
-  // ==========================================
-  // FIREBASE REALTIME DATABASE LEADERBOARD
-  // ==========================================
   const firebaseConfig = {
     apiKey: "AIzaSyBJft7-AF2YCNjxOMe43DLRYyv9CORBSzs",
     authDomain: "galaxtar-leaderboard.firebaseapp.com",
@@ -857,7 +869,6 @@ document.addEventListener("DOMContentLoaded", () => {
         snapshot.forEach(childSnapshot => {
           scores.push(childSnapshot.val());
         });
-
         scores.reverse();
 
         if (scores.length === 0) {
