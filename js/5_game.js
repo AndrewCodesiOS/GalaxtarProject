@@ -76,7 +76,7 @@ class ExploreGameEngine {
     this.bossDefeatedAt80k = false;
     this.bossDefeatedAt100k = false;
     this.boss = null;
-    this.solarFirewalls = []; // For 60k Boss mechanics
+    this.solarFirewalls = [];
 
     this.keys = {};
     this.activeTouches = new Map();
@@ -561,7 +561,6 @@ class ExploreGameEngine {
         });
       });
     } else if (this.boss.tier === 40000) {
-      // Circular ring spread attack
       const numBullets = 10;
       for (let i = 0; i < numBullets; i++) {
         const angle = (Math.PI * 2 / numBullets) * i;
@@ -575,7 +574,6 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 60000) {
-      // Solar plasma fan & firewall trigger
       [-0.6, -0.3, 0, 0.3, 0.6].forEach(ang => {
         this.enemyBullets.push({
           x: this.boss.x,
@@ -586,7 +584,6 @@ class ExploreGameEngine {
           color: "#ff9900"
         });
       });
-      // Drop a firewall trail barrier across canvas
       this.solarFirewalls.push({
         x: Math.random() * (this.canvas.width - 200),
         y: this.boss.y + 120,
@@ -595,7 +592,6 @@ class ExploreGameEngine {
         life: 5.0
       });
     } else if (this.boss.tier === 80000) {
-      // Swarm multi-directional needles
       for (let i = -3; i <= 3; i++) {
         this.enemyBullets.push({
           x: this.boss.x + (i * 20),
@@ -607,7 +603,7 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 100000) {
-      if (this.boss.hp <= 300) this.boss.phase = 2; // Enrage Phase 2
+      if (this.boss.hp <= 300) this.boss.phase = 2;
       const spread = this.boss.phase === 2 ? 7 : 4;
       for (let i = -spread; i <= spread; i++) {
         this.enemyBullets.push({
@@ -656,12 +652,10 @@ class ExploreGameEngine {
     const speedMult = 1.0;
 
     if (!this.isGameOver) {
-      // If boss is active, freeze distance accumulation so player fights in arena mode
       if (!this.isBossActive) {
         this.elapsedTime += dt;
         this.distance += 220 * passiveDistanceMultiplier * dt;
 
-        // Check distance milestones for all 5 Mega Bosses
         if (this.distance >= 20000 && !this.bossDefeatedAt20k && !this.isBossActive) {
           this.triggerMegaBoss(20000);
         } else if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
@@ -789,7 +783,6 @@ class ExploreGameEngine {
       return true;
     });
 
-    // Pause regular asteroid/enemy spawns while any Boss is active
     if (!this.isBossActive) {
       this.asteroidSpawnTimer += dt * speedMult;
       if (this.asteroidSpawnTimer >= 3.2) {
@@ -821,14 +814,20 @@ class ExploreGameEngine {
       }
     }
 
-    // Boss AI Loop & Unique Mechanics
+    // Boss AI Loop & Strict Boundary Clamp
     if (this.isBossActive && this.boss) {
       this.boss.x += this.boss.vx * dt;
-      if (this.boss.x < 80 || this.boss.x > this.canvas.width - 80) {
+      
+      // Strict screen containment clamp to prevent bosses from flying off-screen
+      const margin = 80;
+      if (this.boss.x < margin) {
+        this.boss.x = margin;
+        this.boss.vx *= -1;
+      } else if (this.boss.x > this.canvas.width - margin) {
+        this.boss.x = this.canvas.width - margin;
         this.boss.vx *= -1;
       }
 
-      // 40k Boss Special Mechanic: Gravitational Pull on Player
       if (this.boss.tier === 40000) {
         this.boss.timer++;
         const pullActive = Math.floor(this.boss.timer / 120) % 2 === 0;
@@ -840,7 +839,6 @@ class ExploreGameEngine {
         }
       }
 
-      // 60k Boss Firewall Update
       if (this.boss.tier === 60000) {
         this.solarFirewalls.forEach(fw => {
           fw.life -= dt;
@@ -966,6 +964,7 @@ class ExploreGameEngine {
 
           if (this.boss.hp <= 0) {
             this.resolveBossDefeat();
+            return; // Exit collision pass immediately to prevent stale reference freezes
           }
           break;
         }
@@ -979,6 +978,7 @@ class ExploreGameEngine {
 
           if (this.boss.hp <= 0) {
             this.resolveBossDefeat();
+            return;
           }
           break;
         }
@@ -1100,6 +1100,8 @@ class ExploreGameEngine {
   resolveBossDefeat() {
     if (!this.boss) return;
     const tier = this.boss.tier;
+    
+    // Play explosion and visual particle burst safely
     this.audio.playExplosion(false);
     this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 60);
 
@@ -1107,15 +1109,20 @@ class ExploreGameEngine {
     this.sessionPoints += rewards[tier] || 50;
     this.sessionShips++;
 
+    // Mark milestone defeated flags
     if (tier === 20000) this.bossDefeatedAt20k = true;
     if (tier === 40000) this.bossDefeatedAt40k = true;
     if (tier === 60000) this.bossDefeatedAt60k = true;
     if (tier === 80000) this.bossDefeatedAt80k = true;
     if (tier === 100000) this.bossDefeatedAt100k = true;
 
+    // Reset boss handles cleanly before swapping music back
     this.boss = null;
     this.isBossActive = false;
     this.solarFirewalls = [];
+    this.enemyBullets = []; // Clear lingering boss projectiles so player isn't unfairly hit
+
+    // Smooth return to regular gameplay music
     this.audio.switchToNormalMusic();
   }
 
@@ -1315,7 +1322,6 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
-    // Render Solar Firewalls (60k Boss Obstacles)
     for (const fw of this.solarFirewalls) {
       ctx.save();
       ctx.fillStyle = "#ff5500";
@@ -1365,7 +1371,6 @@ class ExploreGameEngine {
       this.drawPolygon(e.shape, e.x, e.y, e.w, e.h, e.color, true);
     }
 
-    // Render Active Mega Boss
     if (this.isBossActive && this.boss) {
       this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true);
     }
@@ -1392,7 +1397,6 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
-    // Draw live distance telemetry on top left
     ctx.save();
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 16px monospace";
@@ -1402,7 +1406,6 @@ class ExploreGameEngine {
     ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
 
-    // Render Visible Boss Health Bar at Top Center if Boss is Active
     if (this.isBossActive && this.boss) {
       const bossBarW = Math.min(320, this.canvas.width * 0.6);
       const bossBarH = 18;
@@ -1430,7 +1433,6 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
-    // Draw live shield health on bottom left (with text inside)
     const currentHp = Math.max(0, this.ship.hp);
     const maxHp = this.ship.maxHP;
     const hpPercent = Math.max(0, Math.min(1, currentHp / maxHp));
@@ -1459,7 +1461,6 @@ class ExploreGameEngine {
     ctx.fillText(`SHIELD: ${currentHp}/${maxHp}`, shieldBarX + 10, shieldBarY + 11);
     ctx.restore();
 
-    // Draw live fuel gauge on bottom right (with text inside)
     const currentFuel = Math.floor(this.stats.data.currentFuel);
     const maxFuel = this.stats.maxFuel();
     const fuelPercent = Math.max(0, Math.min(1, currentFuel / maxFuel));
