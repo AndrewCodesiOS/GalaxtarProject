@@ -107,15 +107,6 @@ const GALAXTAR_DATA = {
       desc: "Reduces passive fuel burn over distance by 25%."
     },
     {
-      id: "overclock_core",
-      name: "Overclock Core",
-      rarity: "RARE",
-      color: "#9b59b6",
-      price: 50,
-      weight: 15,
-      desc: "Increases projectile speed by 25% and adds +1 bullet damage."
-    },
-    {
       id: "yield_amplifier",
       name: "Yield Amplifier",
       rarity: "RARE",
@@ -152,6 +143,15 @@ const GALAXTAR_DATA = {
       price: 150,
       weight: 7,
       desc: "Survive 1 fatal hit with full HP restored."
+    },
+   {
+      id: "overclock_core",
+      name: "Overclock Core",
+      rarity: "EPIC",
+      color: "#f1c40f", // Updated to Epic gold/yellow
+      price: 150,       // Updated to Epic $150 price
+      weight: 7,        // Updated to Epic drop weight
+      desc: "Increases projectile speed by 25% and adds +1 bullet damage."
     },
     {
       id: "halo_barrier",
