@@ -717,9 +717,9 @@ class ExploreGameEngine {
             x: this.drone.x,
             y: this.drone.y - 12,
             length: 22,
-            speed: 380, // Slower, balanced speed
-            color: "#00f0ff",
-            damage: 0.5 // 0.5 HP damage per hit
+            speed: 380,
+            color: d.selectedDroneColor || d.selectedShipColor, // Matches selected drone color or ship color
+            damage: 0.5
           });
         }
       }
@@ -1034,7 +1034,7 @@ class ExploreGameEngine {
         const b = this.droneBeams[i];
         if (hitBox(b.x, b.y, 4, b.length, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
           this.boss.hp -= b.damage;
-          this.spawnExplosion(b.x, b.y, "#00f0ff", 5);
+          this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 5);
           this.droneBeams.splice(i, 1);
 
           if (this.boss.hp <= 0) {
@@ -1115,7 +1115,7 @@ class ExploreGameEngine {
       if (consumed) this.bullets.splice(i, 1);
     }
 
-    // Handle AI Drone Beam Collisions (1 HP damage)
+    // Handle AI Drone Beam Collisions
     for (let i = this.droneBeams.length - 1; i >= 0; i--) {
       const b = this.droneBeams[i];
       let consumed = false;
@@ -1124,7 +1124,7 @@ class ExploreGameEngine {
         const e = this.enemies[j];
         if (hitBox(b.x, b.y, 4, b.length, e.x, e.y, e.w, e.h)) {
           e.hp -= b.damage;
-          this.spawnExplosion(b.x, b.y, "#00f0ff", 4);
+          this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 4);
           consumed = true;
 
           if (e.hp <= 0) {
@@ -1149,7 +1149,7 @@ class ExploreGameEngine {
           const a = this.asteroids[j];
           if (hitBox(b.x, b.y, 4, b.length, a.x, a.y, a.size, a.size)) {
             a.hp -= b.damage;
-            this.spawnExplosion(b.x, b.y, "#00f0ff", 4);
+            this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 4);
             consumed = true;
             if (a.hp <= 0) {
               this.destroyAsteroid(j, getCalculatedPoints);
@@ -1517,9 +1517,10 @@ class ExploreGameEngine {
 
     for (const b of this.droneBeams) {
       ctx.save();
-      ctx.strokeStyle = "#00f0ff";
+      const dColor = this.stats.data.selectedDroneColor || this.stats.data.selectedShipColor;
+      ctx.strokeStyle = dColor;
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#00f0ff";
+      ctx.shadowColor = dColor;
       ctx.shadowBlur = 14;
       ctx.beginPath();
       ctx.moveTo(b.x, b.y);
@@ -1578,7 +1579,8 @@ class ExploreGameEngine {
       }
 
       if (this.hasAiDrone && this.drone) {
-        this.drawPolygon("triangle", this.drone.x, this.drone.y, this.drone.w, this.drone.h, "#00f0ff", false);
+        const dColor = this.stats.data.selectedDroneColor || this.stats.data.selectedShipColor;
+        this.drawPolygon("triangle", this.drone.x, this.drone.y, this.drone.w, this.drone.h, dColor, false);
       }
     }
 
