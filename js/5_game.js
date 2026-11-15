@@ -217,10 +217,6 @@ class ExploreGameEngine {
       hasRegen: shieldInfo.regen || this.activeModules.has("void_shield_gen")
     };
 
-    if (this.activeModules.has("ion_capacitor")) {
-      d.currentFuel = Math.min(this.stats.maxFuel() + 50, d.currentFuel + 50);
-    }
-
     this.stars = [];
     this.planets = [];
     this.shootingStars = [];
@@ -250,7 +246,7 @@ class ExploreGameEngine {
         x: Math.random() * this.canvas.width,
         y: Math.random() * this.canvas.height,
         size: 1.2 + Math.random() * 2.2,
-        speed: (45 + Math.random() * 85) * (this.activeModules.has("stellar_compass") ? 1.2 : 1),
+        speed: 45 + Math.random() * 85,
         color: Math.random() < 0.2 ? "#9bd4ff" : "#ffffff"
       });
     }
@@ -327,7 +323,7 @@ class ExploreGameEngine {
     const isOverclocked = this.activeModules && this.activeModules.has("overclock_core");
     const bSpeed = isOverclocked ? 650 : 520;
     const bonusDmg = isOverclocked ? 1 : 0;
-    const doubleProjectiles = this.activeModules && this.activeModules.has("quantum_accelerator");
+    const hasLaserOvercharger = this.activeModules && this.activeModules.has("laser_overcharger");
 
     const spawnB = (ox, size, dmg) => {
       const heat = wLvl === 5 && Math.random() <= 0.15;
@@ -340,15 +336,16 @@ class ExploreGameEngine {
         damage: dmg + bonusDmg,
         isHeatSeeking: heat
       });
-      if (doubleProjectiles) {
+
+      if (hasLaserOvercharger) {
         this.bullets.push({
-          x: this.ship.x + ox + (ox === 0 ? 12 : 0),
+          x: this.ship.x + ox + 15,
           y: this.ship.y - this.ship.h / 2,
-          size,
-          speed: bSpeed,
-          color,
-          damage: dmg + bonusDmg,
-          isHeatSeeking: heat
+          size: 6,
+          speed: bSpeed * 1.1,
+          color: "#f1c40f",
+          damage: 1,
+          isHeatSeeking: true
         });
       }
     };
@@ -627,9 +624,8 @@ class ExploreGameEngine {
       }
     }
 
-    const starSpeedFactor = this.activeModules && this.activeModules.has("stellar_compass") ? 1.2 : 1.0;
     for (const s of this.stars) {
-      s.y += s.speed * speedMult * starSpeedFactor * dt;
+      s.y += s.speed * speedMult * dt;
       if (s.y > this.canvas.height) {
         s.y = -4;
         s.x = Math.random() * this.canvas.width;
@@ -833,7 +829,8 @@ class ExploreGameEngine {
         for (let j = this.asteroids.length - 1; j >= 0; j--) {
           const a = this.asteroids[j];
           if (hitBox(b.x, b.y, b.size, b.size, a.x, a.y, a.size, a.size)) {
-            const deflectorBonus = this.activeModules && this.activeModules.has("asteroid_deflector") && a.size === 28 ? 2 : 1;
+            // Asteroid Deflector buff: Double damage to ALL asteroids
+            const deflectorBonus = this.activeModules && this.activeModules.has("asteroid_deflector") ? 2 : 1;
             a.hp -= b.damage * deflectorBonus;
             this.spawnExplosion(b.x, b.y, "#e67e22", 6);
             consumed = true;
@@ -861,7 +858,8 @@ class ExploreGameEngine {
         for (let j = this.asteroids.length - 1; j >= 0; j--) {
           const a = this.asteroids[j];
           if (hitBox(b.x, b.y, b.size, b.size, a.x, a.y, a.size, a.size)) {
-            a.hp -= b.damage;
+            const deflectorBonus = this.activeModules && this.activeModules.has("asteroid_deflector") ? 2 : 1;
+            a.hp -= b.damage * deflectorBonus;
             consumed = true;
             if (a.hp <= 0) this.destroyAsteroid(j);
             break;
@@ -905,6 +903,12 @@ class ExploreGameEngine {
       const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
       this.sessionPoints += Math.ceil(pts * pointMult);
     }
+
+    // Scrap Extractor module perk
+    if (this.activeModules && this.activeModules.has("scrap_extractor")) {
+      d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 10);
+    }
+
     this.audio.playExplosion(false);
     this.spawnExplosion(e.x, e.y, e.color, 24);
     this.enemies.splice(j, 1);
@@ -966,6 +970,12 @@ class ExploreGameEngine {
   }
 
   damagePlayer(amount) {
+    // Kinetic Plating module check
+    if (this.activeModules && this.activeModules.has("kinetic_plating") && !this.isInvulnerable) {
+      this.isInvulnerable = true;
+      this.invulnTimer = 2.0;
+    }
+
     this.ship.hp = Math.max(0, this.ship.hp - amount);
     this.isInvulnerable = true;
     this.invulnTimer = 0.5;
