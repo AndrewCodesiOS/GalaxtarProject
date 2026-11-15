@@ -703,7 +703,7 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone smooth player-relative floating behavior & smart target-seeking laser firing
+      // AI Drone smooth player-relative floating behavior & expanded-range target-seeking laser firing
       if (this.hasAiDrone && this.drone) {
         const targetX = this.ship.x + 45;
         const targetY = this.ship.y + 15;
@@ -714,9 +714,9 @@ class ExploreGameEngine {
         if (this.drone.fireTimer >= 0.35) {
           this.drone.fireTimer = 0;
 
-          // Scan for targets within a 350-pixel radius
+          // Scan for targets within an expanded 700-pixel radius (earlier detection)
           let target = null;
-          let closestDist = 350;
+          let closestDist = 700;
 
           if (this.isBossActive && this.boss) {
             const dist = Math.hypot(this.boss.x - this.drone.x, this.boss.y - this.drone.y);
@@ -728,7 +728,7 @@ class ExploreGameEngine {
 
           if (!target) {
             for (const e of this.enemies) {
-              if (e.y < this.drone.y + 100) {
+              if (e.y < this.drone.y + 300) {
                 const dist = Math.hypot(e.x - this.drone.x, e.y - this.drone.y);
                 if (dist < closestDist) {
                   closestDist = dist;
@@ -740,7 +740,7 @@ class ExploreGameEngine {
 
           if (!target) {
             for (const a of this.asteroids) {
-              if (a.y < this.drone.y + 100) {
+              if (a.y < this.drone.y + 300) {
                 const dist = Math.hypot(a.x - this.drone.x, a.y - this.drone.y);
                 if (dist < closestDist) {
                   closestDist = dist;
