@@ -704,7 +704,7 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone Active Target Tracking & Beam Firing
+      // AI Drone Active Target Tracking with Screen-Clamp Boundaries
       if (this.hasAiDrone && this.drone) {
         let targetX = null;
         if (this.isBossActive && this.boss) {
@@ -731,7 +731,8 @@ class ExploreGameEngine {
             this.drone.vx *= -1;
           }
         }
-        this.drone.x = Math.max(30, Math.min(this.canvas.width - 30, this.drone.x));
+        // Strict boundary clamp so the drone never gets pinned against screen edges
+        this.drone.x = Math.max(40, Math.min(this.canvas.width - 40, this.drone.x));
 
         this.drone.fireTimer += dt;
         if (this.drone.fireTimer >= 0.3) {
@@ -1538,7 +1539,6 @@ class ExploreGameEngine {
       ctx.fill();
     }
 
-    // Render AI Drone Laser Beams as glowing streaks
     for (const b of this.droneBeams) {
       ctx.save();
       ctx.strokeStyle = "#00f0ff";
@@ -1601,7 +1601,6 @@ class ExploreGameEngine {
         ctx.restore();
       }
 
-      // Render AI Drone as a sleek triangle
       if (this.hasAiDrone && this.drone) {
         this.drawPolygon("triangle", this.drone.x, this.drone.y, this.drone.w, this.drone.h, "#00f0ff", false);
       }
