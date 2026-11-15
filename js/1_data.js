@@ -49,6 +49,7 @@ const GALAXTAR_DATA = {
     { name: "Diamond", id: "diamond", cost: 2000, color: "#e74c3c" }
   ],
   modules: [
+    // --- COMMON ($25) ---
     {
       id: "fuel_scavenger",
       name: "Fuel Scavenger",
@@ -77,6 +78,26 @@ const GALAXTAR_DATA = {
       desc: "Start the flight with +2 bonus Shield HP."
     },
     {
+      id: "overdrive_thrusters",
+      name: "Overdrive Thrusters",
+      rarity: "COMMON",
+      color: "#2ecc71",
+      price: 25,
+      weight: 25,
+      desc: "Grants a permanent +10% movement speed boost."
+    },
+    {
+      id: "auxiliary_plating",
+      name: "Auxiliary Plating",
+      rarity: "COMMON",
+      color: "#2ecc71",
+      price: 25,
+      weight: 25,
+      desc: "Start the flight with +1 bonus Shield HP."
+    },
+
+    // --- RARE ($50) ---
+    {
       id: "cryo_thrusters",
       name: "Cryo-Regulator",
       rarity: "RARE",
@@ -95,6 +116,35 @@ const GALAXTAR_DATA = {
       desc: "Increases projectile speed by 25% and adds +1 bullet damage."
     },
     {
+      id: "yield_amplifier",
+      name: "Yield Amplifier",
+      rarity: "RARE",
+      color: "#3498db",
+      price: 50,
+      weight: 18,
+      desc: "Grants +50% points from all sources."
+    },
+    {
+      id: "asteroid_fracture",
+      name: "Asteroid Fracture",
+      rarity: "RARE",
+      color: "#3498db",
+      price: 50,
+      weight: 18,
+      desc: "All asteroids take exactly 1 shot to destroy."
+    },
+    {
+      id: "fuel_extractor",
+      name: "Fuel Extractor",
+      rarity: "RARE",
+      color: "#3498db",
+      price: 50,
+      weight: 15,
+      desc: "Destroying enemy ships grants +1 fuel per kill."
+    },
+
+    // --- EPIC ($150) ---
+    {
       id: "phoenix_protocol",
       name: "Phoenix Protocol",
       rarity: "EPIC",
@@ -102,6 +152,15 @@ const GALAXTAR_DATA = {
       price: 150,
       weight: 7,
       desc: "Survive 1 fatal hit with full HP restored and a screen-clearing blast."
+    },
+    {
+      id: "halo_barrier",
+      name: "Halo Barrier",
+      rarity: "EPIC",
+      color: "#f1c40f",
+      price: 150,
+      weight: 7,
+      desc: "Surrounds your ship with an energy halo that absorbs 1 collision completely, then shatters."
     }
   ],
   enemyTypes: {
