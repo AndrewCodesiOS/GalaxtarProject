@@ -28,15 +28,24 @@ class StatsStore {
       isPeacefulMode: false,
       isHardcoreMode: false,
       musicOn: true,
-      sfxOn: true
+      sfxOn: true,
+      moduleInventory: {
+        fuel_scavenger: 1
+      }
     };
     this.load();
   }
   load() {
     const saved = localStorage.getItem("galaxtar_save_v1");
     if (saved) {
-      try { this.data = Object.assign({}, this.defaultData, JSON.parse(saved)); }
-      catch(e) { this.data = Object.assign({}, this.defaultData); }
+      try {
+        this.data = Object.assign({}, this.defaultData, JSON.parse(saved));
+        if (!this.data.moduleInventory) {
+          this.data.moduleInventory = { fuel_scavenger: 1 };
+        }
+      } catch(e) {
+        this.data = Object.assign({}, this.defaultData);
+      }
     } else {
       this.data = Object.assign({}, this.defaultData);
     }
@@ -53,9 +62,26 @@ class StatsStore {
     this.save();
   }
   addSolarFuel() {
-    if (this.data.fuelLevel < 5) return; // Only apply if Level 5 Solar Reactor is owned
+    if (this.data.fuelLevel < 5) return;
     const m = this.maxFuel();
     this.data.currentFuel = Math.min(m, this.data.currentFuel + 20);
+    this.save();
+  }
+  addModule(moduleId, count = 1) {
+    if (!this.data.moduleInventory) this.data.moduleInventory = {};
+    this.data.moduleInventory[moduleId] = (this.data.moduleInventory[moduleId] || 0) + count;
+    this.save();
+  }
+  consumeModules(moduleIds) {
+    if (!this.data.moduleInventory) return;
+    moduleIds.forEach(id => {
+      if (this.data.moduleInventory[id] && this.data.moduleInventory[id] > 0) {
+        this.data.moduleInventory[id] -= 1;
+        if (this.data.moduleInventory[id] <= 0) {
+          delete this.data.moduleInventory[id];
+        }
+      }
+    });
     this.save();
   }
 }
