@@ -101,10 +101,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnRefuel) {
       if (missing > 0) {
         btnRefuel.classList.remove("hidden");
-        btnRefuel.innerText = `Refuel (${refuelCost} pts)`;
-        btnRefuel.disabled = stats.data.totalPoints < refuelCost;
-        if (btnRefuel.disabled) btnRefuel.classList.add("disabled");
-        else btnRefuel.classList.remove("disabled");
+        
+        // Soft-lock prevention: If player cannot afford the refuel cost, trigger Emergency Refuel
+        if (stats.data.totalPoints < refuelCost) {
+          btnRefuel.innerText = `EMERGENCY REFUEL (FREE)`;
+          btnRefuel.disabled = false;
+          btnRefuel.classList.remove("disabled");
+        } else {
+          btnRefuel.innerText = `Refuel (${refuelCost} pts)`;
+          btnRefuel.disabled = stats.data.totalPoints < refuelCost;
+          if (btnRefuel.disabled) btnRefuel.classList.add("disabled");
+          else btnRefuel.classList.remove("disabled");
+        }
       } else {
         btnRefuel.classList.add("hidden");
       }
@@ -132,11 +140,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const max = stats.maxFuel();
       const missing = max - current;
       const cost = Math.floor(missing * 0.5);
-      if (missing > 0 && stats.data.totalPoints >= cost) {
-        stats.data.totalPoints -= cost;
-        stats.data.currentFuel = max;
-        stats.save();
-        window.updateFuelWidget();
+      
+      if (missing > 0) {
+        if (stats.data.totalPoints >= cost) {
+          // Normal paid refuel
+          stats.data.totalPoints -= cost;
+          stats.data.currentFuel = max;
+          stats.save();
+          window.updateFuelWidget();
+        } else {
+          // EMERGENCY STIPEND: Triggered whenever the player cannot afford the refuel cost
+          stats.data.currentFuel = max; // Fully fill their tank for free so they aren't trapped
+          stats.save();
+          window.updateFuelWidget();
+          alert("DISTRESS BEACON RECEIVED: Star Command has fully refueled your vessel pro bono to get you back into the void!");
+        }
       }
     });
   }
