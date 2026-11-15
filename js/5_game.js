@@ -202,10 +202,15 @@ class ExploreGameEngine {
 
     this.activeModules = new Set(activeModules);
     this.phoenixAvailable = this.activeModules.has("phoenix_protocol");
+    this.haloAvailable = this.activeModules.has("halo_barrier");
 
     const d = this.stats.data;
     const shieldInfo = GALAXTAR_DATA.shieldLevels[d.shieldLevel - 1];
-    const bonusHP = this.activeModules.has("reinforced_hull") ? 2 : 0;
+    
+    // Calculate shield HP with stackable support for reinforced_hull (+2) and auxiliary_plating (+1)
+    let bonusHP = 0;
+    if (this.activeModules.has("reinforced_hull")) bonusHP += 2;
+    if (this.activeModules.has("auxiliary_plating")) bonusHP += 1;
 
     this.ship = {
       x: this.canvas.width / 2,
@@ -463,7 +468,6 @@ class ExploreGameEngine {
     }
   }
 
-  // --- MEGA BOSS TRIGGER SYSTEM (20k, 40k, 60k, 80k, 100k) ---
   triggerMegaBoss(tier) {
     this.isBossActive = true;
     this.audio.switchToBossMusic();
@@ -657,7 +661,10 @@ class ExploreGameEngine {
   update(dt) {
     const d = this.stats.data;
     const thrusterInfo = GALAXTAR_DATA.thrusterLevels[d.thrusterLevel - 1];
-    const passiveDistanceMultiplier = thrusterInfo.speedMultiplier;
+    
+    // Apply Overdrive Thrusters (+10% speed boost) if equipped
+    const overdriveMult = (this.activeModules && this.activeModules.has("overdrive_thrusters")) ? 1.1 : 1.0;
+    const passiveDistanceMultiplier = thrusterInfo.speedMultiplier * overdriveMult;
     const speedMult = 1.0;
 
     if (!this.isGameOver) {
@@ -678,7 +685,7 @@ class ExploreGameEngine {
         }
       }
 
-      const moveSpeed = 360;
+      const moveSpeed = 360 * overdriveMult;
       if (d.currentFuel > 0 || d.isPeacefulMode) {
         if (this.keys["ArrowLeft"] || this.keys["KeyA"]) this.ship.x -= moveSpeed * dt;
         if (this.keys["ArrowRight"] || this.keys["KeyD"]) this.ship.x += moveSpeed * dt;
@@ -801,7 +808,11 @@ class ExploreGameEngine {
         this.asteroidSpawnTimer = 0;
         const tier = Math.random();
         const size = tier < 0.5 ? 28 : tier < 0.85 ? 42 : 58;
-        const hp = size === 28 ? 2 : size === 42 ? 4 : 6;
+        
+        // Asteroid Fracture Module: All asteroids take 1 shot
+        const hasFracture = this.activeModules && this.activeModules.has("asteroid_fracture");
+        const hp = hasFracture ? 1 : (size === 28 ? 2 : size === 42 ? 4 : 6);
+
         const fuelReward = size === 28 ? 2 : size === 42 ? 4 : 6;
         const pointReward = size === 28 ? 2 : size === 42 ? 5 : 10;
         this.asteroids.push({
@@ -826,7 +837,6 @@ class ExploreGameEngine {
       }
     }
 
-    // Boss AI Loop & Strict Boundary Clamp (Applies to ALL bosses including 20k Titan)
     if (this.isBossActive && this.boss) {
       this.boss.x += this.boss.vx * dt;
       
@@ -964,7 +974,14 @@ class ExploreGameEngine {
     const hitBox = (ax, ay, aw, ah, bx, by, bw, bh) =>
       Math.abs(ax - bx) * 2 < aw + bw && Math.abs(ay - by) * 2 < ah + bh;
 
-    // Boss Bullet & Damage Collisions
+    // Point Multiplier & Yield Amplifier Calculation Helper
+    const getCalculatedPoints = (basePts) => {
+      let mult = 1;
+      if (this.activeModules && this.activeModules.has("bounty_scanner")) mult += 0.25;
+      if (this.activeModules && this.activeModules.has("yield_amplifier")) mult += 0.50;
+      return Math.ceil(basePts * mult);
+    };
+
     if (this.isBossActive && this.boss) {
       for (let i = this.bullets.length - 1; i >= 0; i--) {
         const b = this.bullets[i];
@@ -975,7 +992,7 @@ class ExploreGameEngine {
 
           if (this.boss.hp <= 0) {
             this.resolveBossDefeat();
-            return; // Exit collision pass immediately to prevent stale reference freezes
+            return;
           }
           break;
         }
@@ -1017,9 +1034,14 @@ class ExploreGameEngine {
             const pts = e.points;
             this.sessionShips++;
             if (!d.isPeacefulMode) {
-              const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-              this.sessionPoints += Math.ceil(pts * pointMult);
+              this.sessionPoints += getCalculatedPoints(pts);
             }
+            
+            // Fuel Extractor Module: +1 fuel per enemy kill
+            if (this.activeModules && this.activeModules.has("fuel_extractor")) {
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
+            }
+
             this.audio.playExplosion(false);
             this.spawnExplosion(e.x, e.y, e.color, 24);
             this.enemies.splice(j, 1);
@@ -1036,7 +1058,7 @@ class ExploreGameEngine {
             this.spawnExplosion(b.x, b.y, "#e67e22", 6);
             consumed = true;
             if (a.hp <= 0) {
-              this.destroyAsteroid(j);
+              this.destroyAsteroid(j, getCalculatedPoints);
             }
             break;
           }
@@ -1058,8 +1080,10 @@ class ExploreGameEngine {
             const pts = e.points;
             this.sessionShips++;
             if (!d.isPeacefulMode) {
-              const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-              this.sessionPoints += Math.ceil(pts * pointMult);
+              this.sessionPoints += getCalculatedPoints(pts);
+            }
+            if (this.activeModules && this.activeModules.has("fuel_extractor")) {
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
             }
             this.audio.playExplosion(false);
             this.spawnExplosion(e.x, e.y, e.color, 26);
@@ -1074,7 +1098,7 @@ class ExploreGameEngine {
           if (hitBox(b.x, b.y, b.size, b.size, a.x, a.y, a.size, a.size)) {
             a.hp -= b.damage;
             consumed = true;
-            if (a.hp <= 0) this.destroyAsteroid(j);
+            if (a.hp <= 0) this.destroyAsteroid(j, getCalculatedPoints);
             break;
           }
         }
@@ -1098,8 +1122,7 @@ class ExploreGameEngine {
         const pts = e.points;
         this.sessionShips++;
         if (!d.isPeacefulMode) {
-          const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-          this.sessionPoints += Math.ceil(pts * pointMult);
+          this.sessionPoints += getCalculatedPoints(pts);
         }
         this.spawnExplosion(e.x, e.y, e.color, 24);
         this.enemies.splice(i, 1);
@@ -1111,7 +1134,7 @@ class ExploreGameEngine {
     for (let i = this.asteroids.length - 1; i >= 0; i--) {
       const a = this.asteroids[i];
       if (!this.isInvulnerable && hitBox(a.x, a.y, a.size * 0.8, a.size * 0.8, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
-        this.destroyAsteroid(i);
+        this.destroyAsteroid(i, getCalculatedPoints);
         this.damagePlayer(4);
       }
     }
@@ -1126,8 +1149,12 @@ class ExploreGameEngine {
 
     const rewards = { 20000: 50, 40000: 100, 60000: 175, 80000: 250, 100000: 500 };
     const baseReward = rewards[tier] || 50;
-    const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-    this.sessionPoints += Math.ceil(baseReward * pointMult);
+    
+    let mult = 1;
+    if (this.activeModules && this.activeModules.has("bounty_scanner")) mult += 0.25;
+    if (this.activeModules && this.activeModules.has("yield_amplifier")) mult += 0.50;
+
+    this.sessionPoints += Math.ceil(baseReward * mult);
     this.sessionShips++;
 
     if (tier === 20000) this.bossDefeatedAt20k = true;
@@ -1144,15 +1171,14 @@ class ExploreGameEngine {
     this.audio.switchToNormalMusic();
   }
 
-  destroyAsteroid(index) {
+  destroyAsteroid(index, getCalculatedPoints) {
     const a = this.asteroids[index];
     const d = this.stats.data;
     const fuelMult = (this.activeModules && this.activeModules.has("fuel_scavenger")) ? 1.4 : 1;
-    const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
 
     d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + Math.ceil(a.fuelReward * fuelMult));
     if (!d.isPeacefulMode) {
-      this.sessionPoints += Math.ceil(a.pointReward * pointMult);
+      this.sessionPoints += getCalculatedPoints(a.pointReward);
     }
     this.sessionAsteroids++;
     this.stats.save();
@@ -1162,6 +1188,16 @@ class ExploreGameEngine {
   }
 
   damagePlayer(amount) {
+    // Halo Barrier Module: absorbs 1 collision completely
+    if (this.haloAvailable && amount >= 4) {
+      this.haloAvailable = false;
+      this.isInvulnerable = true;
+      this.invulnTimer = 1.0;
+      this.audio.playChargeBeamSound();
+      this.spawnExplosion(this.ship.x, this.ship.y, "#00ffff", 30);
+      return;
+    }
+
     this.ship.hp = Math.max(0, this.ship.hp - amount);
     this.isInvulnerable = true;
     this.invulnTimer = 0.5;
@@ -1417,6 +1453,19 @@ class ExploreGameEngine {
         this.stats.data.selectedShipColor,
         false
       );
+
+      // Render visual halo ring if Halo Barrier is active
+      if (this.haloAvailable) {
+        ctx.save();
+        ctx.strokeStyle = "#00ffff";
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = "#00ffff";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(this.ship.x, this.ship.y, Math.max(this.ship.w, this.ship.h) * 0.75, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     for (const p of this.particles) {
