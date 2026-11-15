@@ -529,7 +529,8 @@ class ExploreGameEngine {
         shape: "diamond",
         attackTimer: 0,
         phoenixState: "normal", // normal -> rebirthing -> reborn
-        rebirthTimer: 0
+        rebirthTimer: 0,
+        flameAngle: -0.8 // Sweeping angle tracker for the flame beam
       };
     } else if (tier === 160000) {
       this.boss = {
@@ -597,21 +598,29 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 120000) {
-      // Helios Phoenix Fire Breath Attack (Sweeping fan of fiery projectiles)
+      // Helios Phoenix Flame Beam Animation (Dense, sweeping arc of fiery ember bullets)
       const isReborn = this.boss.phoenixState === "reborn";
-      const count = isReborn ? 9 : 6;
-      const speedMult = isReborn ? 1.3 : 1.0;
+      const flameCount = isReborn ? 7 : 5;
       
-      for (let i = 0; i < count; i++) {
-        const progress = i / (count - 1);
-        const ang = -0.7 + (progress * 1.4);
+      // Sweep the flame angle back and forth across a smooth arc
+      this.boss.flameAngle = (this.boss.flameAngle || -0.8) + 0.35;
+      if (this.boss.flameAngle > 0.8 || this.boss.flameAngle < -0.8) {
+        // Reverse sweep direction when hitting edges
+        this.boss.flameAngle *= -1;
+      }
+
+      for (let i = 0; i < flameCount; i++) {
+        const spreadOffset = (i - Math.floor(flameCount / 2)) * 0.18;
+        const currentAngle = this.boss.flameAngle + spreadOffset;
+        const speedMult = isReborn ? 1.4 : 1.15;
+
         this.enemyBullets.push({
           x: this.boss.x,
           y: this.boss.y + this.boss.h / 2,
-          vx: Math.sin(ang) * 240,
+          vx: Math.sin(currentAngle) * 280,
           vy: spd * speedMult,
-          size: isReborn ? 11 : 9,
-          color: isReborn ? "#ff3300" : "#ff9900"
+          size: isReborn ? 10 : 8,
+          color: isReborn ? "#ff2200" : "#ff8800"
         });
       }
     } else if (this.boss.tier === 160000) {
@@ -939,10 +948,10 @@ class ExploreGameEngine {
           this.boss.phoenixState = "reborn";
           this.boss.maxHp = 150;
           this.boss.hp = 150;
-          this.boss.color = "#ff3300"; // Brighter fiery red-orange
-          this.spawnExplosion(this.boss.x, this.boss.y, "#ffcc00", 50);
+          this.boss.color = "#ff2200"; // Intense fiery red
+          this.spawnExplosion(this.boss.x, this.boss.y, "#ffaa00", 50);
         }
-        return; // Pause movement and firing during rebirth animation
+        return; 
       }
 
       this.boss.x += this.boss.vx * dt;
@@ -968,7 +977,7 @@ class ExploreGameEngine {
       }
 
       this.boss.attackTimer += dt;
-      const attackInterval = this.boss.tier === 200000 && this.boss.phase === 2 ? 0.7 : (this.boss.tier === 120000 && this.boss.phoenixState === "reborn" ? 0.8 : 1.2);
+      const attackInterval = this.boss.tier === 200000 && this.boss.phase === 2 ? 0.7 : (this.boss.tier === 120000 ? 0.35 : 1.2);
       if (this.boss.attackTimer >= attackInterval) {
         this.boss.attackTimer = 0;
         this.bossShoot();
@@ -1084,7 +1093,6 @@ class ExploreGameEngine {
     };
 
     if (this.isBossActive && this.boss) {
-      // Skip collision processing while phoenix is in middle of rebirth animation
       if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") return;
 
       for (let i = this.bullets.length - 1; i >= 0; i--) {
@@ -1096,9 +1104,8 @@ class ExploreGameEngine {
 
           if (this.boss.hp <= 0) {
             if (this.boss.tier === 120000 && this.boss.phoenixState === "normal") {
-              // Trigger Phoenix Rebirth sequence!
               this.boss.phoenixState = "rebirthing";
-              this.boss.rebirthTimer = 2.0; // 2 second pause while breaking apart into embers
+              this.boss.rebirthTimer = 2.0;
               this.audio.playExplosion(false);
               this.spawnExplosion(this.boss.x, this.boss.y, "#ff9900", 70);
               this.enemyBullets = [];
@@ -1640,11 +1647,10 @@ class ExploreGameEngine {
     }
 
     if (this.isBossActive && this.boss) {
-      // If phoenix is rebirthing, render glowing embers / particles instead of solid shape
       if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") {
         ctx.save();
-        ctx.fillStyle = "#ffcc00";
-        ctx.shadowColor = "#ff3300";
+        ctx.fillStyle = "#ffaa00";
+        ctx.shadowColor = "#ff2200";
         ctx.shadowBlur = 25;
         ctx.beginPath();
         ctx.arc(this.boss.x, this.boss.y, 28 + Math.sin(performance.now() * 0.02) * 8, 0, Math.PI * 2);
