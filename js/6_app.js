@@ -702,8 +702,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Explicit listeners for each button to track the exact drone cheat sequence safely:
-  // 1. Peaceful ON -> 2. Peaceful OFF -> 3. Hardcore ON -> 4. Hardcore OFF -> 5. Music OFF -> 6. Music ON -> 7. SFX OFF -> 8. SFX ON
+  // Clean sequential step-checker for the AI Companion Drone cheat
+  const advanceDroneCheat = (expectedStep) => {
+    if (droneCheatStep === expectedStep) {
+      droneCheatStep++;
+    } else {
+      droneCheatStep = 0;
+    }
+  };
+
   const pOff = document.getElementById("set-peaceful-off");
   const pOn = document.getElementById("set-peaceful-on");
   const hOff = document.getElementById("set-hardcore-off");
@@ -714,32 +721,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const sOn = document.getElementById("set-sfx-on");
 
   if (pOn) {
-    pOn.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 0) ? 1 : 0; });
+    pOn.addEventListener("click", () => {
+      if (droneCheatStep === 0) droneCheatStep = 1;
+      else droneCheatStep = 0;
+    });
   }
   if (pOff) {
-    pOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 1) ? 2 : 0; });
+    if (pOff) pOff.addEventListener("click", () => advanceDroneCheat(1));
   }
   if (hOn) {
-    hOn.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 2) ? 3 : 0; });
+    hOn.addEventListener("click", () => advanceDroneCheat(2));
   }
   if (hOff) {
-    hOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 3) ? 4 : 0; });
+    hOff.addEventListener("click", () => advanceDroneCheat(3));
   }
   if (mOff) {
-    mOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 4) ? 5 : 0; });
+    mOff.addEventListener("click", () => advanceDroneCheat(4));
   }
   if (mOn) {
     mOn.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 5) ? 6 : 0;
+      advanceDroneCheat(5);
       if (cheatStep === 4) cheatStep = 5;
     });
   }
   if (sOff) {
-    sOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 6) ? 7 : 0; });
+    sOff.addEventListener("click", () => advanceDroneCheat(6));
   }
   if (sOn) {
     sOn.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 7) ? 8 : 0;
+      advanceDroneCheat(7);
       if (cheatStep === 3) cheatStep = 4;
     });
   }
