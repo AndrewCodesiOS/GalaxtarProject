@@ -19,12 +19,8 @@ class AudioController {
         this.bgMusic.pause();
         this.stopBossSynth();
       } else {
-        if (this.musicEnabled) {
-          if (this.isBossMusicPlaying) {
-            this.startBossSynth();
-          } else {
-            this.bgMusic.play().catch(e => console.log("Music resume error:", e));
-          }
+        if (this.musicEnabled && !this.isBossMusicPlaying) {
+          this.bgMusic.play().catch(e => console.log("Music resume error:", e));
         }
       }
     });
@@ -39,6 +35,17 @@ class AudioController {
     }
     if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
       this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
+    }
+  }
+
+  // Universal safety check to revive stalled audio contexts mid-session
+  ensureActive() {
+    if (this.audioCtx) {
+      if (this.audioCtx.state === "suspended" || this.audioCtx.state === "interrupted") {
+        this.audioCtx.resume().catch(e => console.log("Audio context recovery error:", e));
+      }
+    } else {
+      this.init();
     }
   }
 
@@ -81,10 +88,9 @@ class AudioController {
     let step = 0;
 
     this.bossInterval = setInterval(() => {
-      if (!this.musicEnabled || !this.audioCtx) return;
-      if (this.audioCtx.state === "suspended") {
-        this.audioCtx.resume();
-      }
+      if (!this.musicEnabled) return;
+      this.ensureActive();
+      if (!this.audioCtx || this.audioCtx.state !== "running") return;
       
       try {
         const now = this.audioCtx.currentTime;
@@ -131,9 +137,8 @@ class AudioController {
 
   playGunSound() {
     if (!this.sfxEnabled) return;
-    this.init();
-    if (!this.audioCtx) return;
-    if (this.audioCtx.state === "suspended") this.audioCtx.resume();
+    this.ensureActive();
+    if (!this.audioCtx || this.audioCtx.state !== "running") return;
 
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
@@ -150,9 +155,8 @@ class AudioController {
 
   playChargeBeamSound() {
     if (!this.sfxEnabled) return;
-    this.init();
-    if (!this.audioCtx) return;
-    if (this.audioCtx.state === "suspended") this.audioCtx.resume();
+    this.ensureActive();
+    if (!this.audioCtx || this.audioCtx.state !== "running") return;
 
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
@@ -169,9 +173,8 @@ class AudioController {
 
   playExplosion(isAsteroid = false) {
     if (!this.sfxEnabled) return;
-    this.init();
-    if (!this.audioCtx) return;
-    if (this.audioCtx.state === "suspended") this.audioCtx.resume();
+    this.ensureActive();
+    if (!this.audioCtx || this.audioCtx.state !== "running") return;
 
     const bufferSize = this.audioCtx.sampleRate * 0.3;
     const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
