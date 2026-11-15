@@ -222,13 +222,13 @@ class ExploreGameEngine {
       hasRegen: shieldInfo.regen
     };
 
-    // Initialize independent AI Drone patrolling the lower area
+    // Initialize AI Drone with tracking capabilities
     this.drone = {
       x: this.canvas.width / 2,
       y: this.canvas.height - 120,
-      w: 24,
-      h: 24,
-      vx: 150,
+      w: 26,
+      h: 26,
+      vx: 180,
       fireTimer: 0
     };
 
@@ -238,7 +238,7 @@ class ExploreGameEngine {
     this.asteroids = [];
     this.enemies = [];
     this.bullets = [];
-    this.droneBullets = [];
+    this.droneBeams = [];
     this.chargeBullets = [];
     this.enemyBullets = [];
     this.particles = [];
@@ -704,21 +704,43 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // Independent AI Drone Movement & Laser Blasting Logic
+      // AI Drone Active Target Tracking & Beam Firing
       if (this.hasAiDrone && this.drone) {
-        this.drone.x += this.drone.vx * dt;
-        if (this.drone.x < 50 || this.drone.x > this.canvas.width - 50) {
-          this.drone.vx *= -1;
+        let targetX = null;
+        if (this.isBossActive && this.boss) {
+          targetX = this.boss.x;
+        } else if (this.enemies.length > 0) {
+          let closest = this.enemies[0];
+          let minDist = Infinity;
+          for (const e of this.enemies) {
+            const dist = Math.hypot(e.x - this.drone.x, e.y - this.drone.y);
+            if (dist < minDist) {
+              minDist = dist;
+              closest = e;
+            }
+          }
+          targetX = closest.x;
         }
 
+        if (targetX !== null) {
+          const dir = Math.sign(targetX - this.drone.x);
+          this.drone.x += dir * this.drone.vx * 1.2 * dt;
+        } else {
+          this.drone.x += this.drone.vx * dt;
+          if (this.drone.x < 50 || this.drone.x > this.canvas.width - 50) {
+            this.drone.vx *= -1;
+          }
+        }
+        this.drone.x = Math.max(30, Math.min(this.canvas.width - 30, this.drone.x));
+
         this.drone.fireTimer += dt;
-        if (this.drone.fireTimer >= 0.35) {
+        if (this.drone.fireTimer >= 0.3) {
           this.drone.fireTimer = 0;
-          this.droneBullets.push({
+          this.droneBeams.push({
             x: this.drone.x,
             y: this.drone.y - 12,
-            size: 7,
-            speed: 680,
+            length: 24,
+            speed: 750,
             color: "#00f0ff",
             damage: 2
           });
@@ -963,9 +985,9 @@ class ExploreGameEngine {
       return b.y > -20;
     });
 
-    this.droneBullets = this.droneBullets.filter(b => {
+    this.droneBeams = this.droneBeams.filter(b => {
       b.y -= b.speed * dt;
-      return b.y > -20;
+      return b.y > -30;
     });
 
     this.chargeBullets = this.chargeBullets.filter(b => {
@@ -1031,12 +1053,12 @@ class ExploreGameEngine {
         }
       }
 
-      for (let i = this.droneBullets.length - 1; i >= 0; i--) {
-        const b = this.droneBullets[i];
-        if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
+      for (let i = this.droneBeams.length - 1; i >= 0; i--) {
+        const b = this.droneBeams[i];
+        if (hitBox(b.x, b.y, 4, b.length, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
           this.boss.hp -= b.damage;
-          this.spawnExplosion(b.x, b.y, this.boss.color, 6);
-          this.droneBullets.splice(i, 1);
+          this.spawnExplosion(b.x, b.y, "#00f0ff", 5);
+          this.droneBeams.splice(i, 1);
 
           if (this.boss.hp <= 0) {
             this.resolveBossDefeat();
@@ -1065,7 +1087,7 @@ class ExploreGameEngine {
       }
     }
 
-    // Handle Player Bullets Collisions
+    // Handle Player Bullets
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
       let consumed = false;
@@ -1116,16 +1138,16 @@ class ExploreGameEngine {
       if (consumed) this.bullets.splice(i, 1);
     }
 
-    // Handle AI Drone Laser Blast Collisions
-    for (let i = this.droneBullets.length - 1; i >= 0; i--) {
-      const b = this.droneBullets[i];
+    // Handle AI Drone Beam Collisions
+    for (let i = this.droneBeams.length - 1; i >= 0; i--) {
+      const b = this.droneBeams[i];
       let consumed = false;
 
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const e = this.enemies[j];
-        if (hitBox(b.x, b.y, b.size, b.size, e.x, e.y, e.w, e.h)) {
+        if (hitBox(b.x, b.y, 4, b.length, e.x, e.y, e.w, e.h)) {
           e.hp -= b.damage;
-          this.spawnExplosion(b.x, b.y, "#00f0ff", 5);
+          this.spawnExplosion(b.x, b.y, "#00f0ff", 4);
           consumed = true;
 
           if (e.hp <= 0) {
@@ -1148,9 +1170,9 @@ class ExploreGameEngine {
       if (!consumed) {
         for (let j = this.asteroids.length - 1; j >= 0; j--) {
           const a = this.asteroids[j];
-          if (hitBox(b.x, b.y, b.size, b.size, a.x, a.y, a.size, a.size)) {
+          if (hitBox(b.x, b.y, 4, b.length, a.x, a.y, a.size, a.size)) {
             a.hp -= b.damage;
-            this.spawnExplosion(b.x, b.y, "#00f0ff", 5);
+            this.spawnExplosion(b.x, b.y, "#00f0ff", 4);
             consumed = true;
             if (a.hp <= 0) {
               this.destroyAsteroid(j, getCalculatedPoints);
@@ -1160,7 +1182,7 @@ class ExploreGameEngine {
         }
       }
 
-      if (consumed) this.droneBullets.splice(i, 1);
+      if (consumed) this.droneBeams.splice(i, 1);
     }
 
     for (let i = this.chargeBullets.length - 1; i >= 0; i--) {
@@ -1406,6 +1428,11 @@ class ExploreGameEngine {
       ctx.lineTo(w / 2, -h / 2);
       ctx.lineTo(-w / 2, -h / 2);
       ctx.closePath();
+    } else if (shape === "triangle") {
+      ctx.moveTo(0, -h / 2);
+      ctx.lineTo(w / 2, h / 2);
+      ctx.lineTo(-w / 2, h / 2);
+      ctx.closePath();
     } else {
       ctx.moveTo(0, -h / 2);
       ctx.lineTo(w / 2, h / 2);
@@ -1511,14 +1538,17 @@ class ExploreGameEngine {
       ctx.fill();
     }
 
-    for (const b of this.droneBullets) {
+    // Render AI Drone Laser Beams as glowing streaks
+    for (const b of this.droneBeams) {
       ctx.save();
-      ctx.fillStyle = b.color;
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = "#00f0ff";
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = "#00f0ff";
+      ctx.shadowBlur = 14;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x, b.y + b.length);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -1571,16 +1601,9 @@ class ExploreGameEngine {
         ctx.restore();
       }
 
-      // Render Independent AI Companion Drone at bottom patrol area
+      // Render AI Drone as a sleek triangle
       if (this.hasAiDrone && this.drone) {
-        ctx.save();
-        ctx.fillStyle = "#00f0ff";
-        ctx.shadowColor = "#00f0ff";
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.arc(this.drone.x, this.drone.y, this.drone.w / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        this.drawPolygon("triangle", this.drone.x, this.drone.y, this.drone.w, this.drone.h, "#00f0ff", false);
       }
     }
 
