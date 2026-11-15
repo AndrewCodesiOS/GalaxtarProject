@@ -785,11 +785,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const guidePages = [
     { 
       title: "1. MISSION BRIEFING", 
-      text: "Welcome to GALAXTAR, Pilot.\n\nYou command an advanced deep-space research vessel navigating an infinite, shifting cosmic expanse. Your directive is simple: push deeper into the void and go as far as you can, eliminating hostile ships, harvestesting asteroid resources, and defesting Bosses as you traverse as far ss your ship will take you.\n\nYour ship can be upgraded to increase fuel capacity, shields, firepower, and speed boost. Along the way you will collect single-use Modules that can be stacked up to 3 to use on a flight."  
+      text: "Welcome to GALAXTAR, Pilot.\n\nYou command an advanced deep-space research vessel navigating an infinite, shifting cosmic expanse. Your directive is simple: push deeper into the void and go as far as you can, eliminating hostile ships, harvesting asteroid resources, and defeating bosses as you traverse as far as your ship will take you.\n\nYour ship can be upgraded to increase fuel capacity, shields, firepower, and speed boost. Along the way you will collect single-use modules that can be stacked up to 3 for a single flight."  
     },
     { 
       title: "2. FLIGHT & COMBAT", 
-      text: "STEERING:\nDrag anywhere on screen for smooth, precise vector control.\n\nFIRE:\nTap anywhere outside your ship to fire your lasers. Unlocking advanced weapon upgrades will introduc, multi-shot spreads, charge beams, and heat-seeking projectiles.\n\n
+      text: "STEERING:\nDrag anywhere on screen for smooth, precise vector control.\n\nFIRE:\nTap anywhere outside your ship to fire your lasers. Unlocking advanced weapon upgrades will introduce multi-shot spreads, charge beams, and heat-seeking projectiles." 
     },
     { 
       title: "3. FUEL & RESOURCES", 
