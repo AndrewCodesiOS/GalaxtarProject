@@ -84,7 +84,7 @@ const GALAXTAR_DATA = {
       color: "#2ecc71",
       price: 25,
       weight: 25,
-      desc: "Grants a permanent +10% movement speed boost."
+      desc: "Grants a +10% movement speed boost."
     },
     {
       id: "auxiliary_plating",
@@ -151,7 +151,7 @@ const GALAXTAR_DATA = {
       color: "#f1c40f",
       price: 150,
       weight: 7,
-      desc: "Survive 1 fatal hit with full HP restored and a screen-clearing blast."
+      desc: "Survive 1 fatal hit with full HP restored."
     },
     {
       id: "halo_barrier",
