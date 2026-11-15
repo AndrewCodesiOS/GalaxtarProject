@@ -171,9 +171,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const count = inv[mod.id] || 0;
       const isSelected = selectedLoadoutModules.includes(mod.id);
       const isFull = selectedLoadoutModules.length >= 3 && !isSelected;
+      // Enforce unique selection rule: max 1 of each module type per loadout
+      const alreadySelected = selectedLoadoutModules.includes(mod.id);
 
       return `
-        <div class="module-card ${isSelected ? "selected" : ""} ${isFull ? "disabled" : ""}" data-mod-id="${mod.id}">
+        <div class="module-card ${isSelected ? "selected" : ""} ${isFull || alreadySelected ? "disabled" : ""}" data-mod-id="${mod.id}">
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
               <span style="font-size: 0.65rem; font-weight: bold; color: ${mod.color};">${mod.rarity}</span>
@@ -289,7 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // End Flight from Pause Menu now closes pause view and reveals game over overlay
   const btnEndFlight = document.getElementById("btn-end-flight");
   if (btnEndFlight) {
     btnEndFlight.addEventListener("click", () => {
@@ -298,7 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Post-Flight Shop Logic (Offers 3 random modules to purchase)
+  // Post-Flight Shop Logic
   let lastRunResult = null;
   let currentShopOfferings = [];
   const moduleShopModal = document.getElementById("module-shop-modal");
@@ -330,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div style="background: rgba(20, 20, 28, 0.9); border: 1px solid ${isPurchased ? '#2ecc71' : 'rgba(255,255,255,0.15)'}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.7rem; font-weight: bold; color: ${mod.color};">${mod.rarity}</span>
-            <span style="font-size: 0.85rem; font-weight: bold; color: #f1c40f;">${mod.price} pts</span>
+            <span style="font-size: 0.85rem; font-weight: bold; color: #f1c40f;">$${mod.price} pts</span>
           </div>
           <h4 style="color: #fff; font-size: 0.95rem; margin: 2px 0;">${mod.name}</h4>
           <p style="font-size: 0.78rem; color: #ccc; line-height: 1.3;">${mod.desc}</p>
