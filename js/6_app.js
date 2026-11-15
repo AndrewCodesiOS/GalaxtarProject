@@ -378,15 +378,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const btnGameoverLeaderboard = document.getElementById("btn-gameover-leaderboard");
-  if (btnGameoverLeaderboard) {
-    btnGameoverLeaderboard.addEventListener("click", () => {
-      document.getElementById("gameover-overlay").classList.add("hidden");
-      loadLeaderboard();
-      showView("view-leaderboard");
-    });
-  }
-
   function showGameOver(res) {
     lastRunResult = res;
     const overlay = document.getElementById("gameover-overlay");
