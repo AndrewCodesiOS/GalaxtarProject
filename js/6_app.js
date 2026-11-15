@@ -72,7 +72,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fuelText) fuelText.innerText = `${current}/${max}`;
     const percent = Math.max(0, Math.min(100, (current / max) * 100));
     const fuelRing = document.getElementById("fuel-ring");
-    if (fuelRing) fuelRing.style.strokeDasharray = `${percent}, 100`;
+    if (fuelRing) {
+      fuelRing.style.strokeDasharray = `${percent}, 100`;
+      // Force a synchronous layout reflow so the SVG updates immediately on load
+      void fuelRing.getBoundingClientRect();
+    }
 
     const missing = max - current;
     const refuelCost = Math.floor(missing * 0.5);
@@ -116,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Ensure the fuel widget renders immediately and recalculates after layout paint
+  // Immediately update and force reflow on startup
   updateFuelWidget();
   setTimeout(updateFuelWidget, 50);
 
