@@ -116,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Immediately update the fuel widget circle on startup/load
   updateFuelWidget();
 
   // Menu Buttons
