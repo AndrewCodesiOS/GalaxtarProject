@@ -702,6 +702,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Explicit listeners for each button to track the exact drone cheat sequence safely:
+  // 1. Peaceful ON -> 2. Peaceful OFF -> 3. Hardcore ON -> 4. Hardcore OFF -> 5. Music OFF -> 6. Music ON -> 7. SFX OFF -> 8. SFX ON
+  const pOff = document.getElementById("set-peaceful-off");
+  const pOn = document.getElementById("set-peaceful-on");
+  const hOff = document.getElementById("set-hardcore-off");
+  const hOn = document.getElementById("set-hardcore-on");
+  const mOff = document.getElementById("set-music-off");
+  const mOn = document.getElementById("set-music-on");
+  const sOff = document.getElementById("set-sfx-off");
+  const sOn = document.getElementById("set-sfx-on");
+
+  if (pOn) {
+    pOn.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 0) ? 1 : 0; });
+  }
+  if (pOff) {
+    pOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 1) ? 2 : 0; });
+  }
+  if (hOn) {
+    hOn.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 2) ? 3 : 0; });
+  }
+  if (hOff) {
+    hOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 3) ? 4 : 0; });
+  }
+  if (mOff) {
+    mOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 4) ? 5 : 0; });
+  }
+  if (mOn) {
+    mOn.addEventListener("click", () => {
+      droneCheatStep = (droneCheatStep === 5) ? 6 : 0;
+      if (cheatStep === 4) cheatStep = 5;
+    });
+  }
+  if (sOff) {
+    sOff.addEventListener("click", () => { droneCheatStep = (droneCheatStep === 6) ? 7 : 0; });
+  }
+  if (sOn) {
+    sOn.addEventListener("click", () => {
+      droneCheatStep = (droneCheatStep === 7) ? 8 : 0;
+      if (cheatStep === 3) cheatStep = 4;
+    });
+  }
+
   const setupToggle = (idPrefix, settingKey, onChange) => {
     const offBtn = document.getElementById(`${idPrefix}-off`);
     const onBtn = document.getElementById(`${idPrefix}-on`);
@@ -711,18 +753,6 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.save();
         setToggleState(idPrefix, false);
         if (onChange) onChange(false);
-
-        if (settingKey === "isPeacefulMode" && droneCheatStep === 1) {
-          droneCheatStep = 2;
-        } else if (settingKey === "isHardcoreMode" && droneCheatStep === 3) {
-          droneCheatStep = 4;
-        } else if (settingKey === "musicOn" && droneCheatStep === 5) {
-          droneCheatStep = 6;
-        } else if (settingKey === "sfxOn" && droneCheatStep === 7) {
-          droneCheatStep = 8;
-        } else {
-          droneCheatStep = 0;
-        }
       });
     }
     if (onBtn) {
@@ -738,22 +768,6 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.save();
         setToggleState(idPrefix, true);
         if (onChange) onChange(true);
-
-        if (settingKey === "sfxOn" && cheatStep === 3) {
-          cheatStep = 4;
-        } else if (settingKey === "musicOn" && cheatStep === 4) {
-          cheatStep = 5;
-        } else if (settingKey === "isPeacefulMode" && droneCheatStep === 0) {
-          droneCheatStep = 1;
-        } else if (settingKey === "isHardcoreMode" && droneCheatStep === 2) {
-          droneCheatStep = 3;
-        } else if (settingKey === "musicOn" && droneCheatStep === 4) {
-          droneCheatStep = 5;
-        } else if (settingKey === "sfxOn" && droneCheatStep === 6) {
-          droneCheatStep = 7;
-        } else {
-          if (cheatStep < 3) cheatStep = 0;
-        }
       });
     }
   };
@@ -780,7 +794,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (cheatStep === 5) {
         cheatStep = 6;
       } else if (droneCheatStep === 8) {
-        droneCheatStep = 9;
+        droneCheatStep = 9; // 9th step: clicked reset prompt after sfx on
       } else {
         cheatStep = 0;
         droneCheatStep = 0;
@@ -801,6 +815,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("DEV CHEAT ACTIVATED: +50,000 Points Added!");
         cheatStep = 0;
       } else if (droneCheatStep === 9) {
+        // 10th step (Cancel): Awards the AI Drone!
         stats.addModule("ai_drone", 1);
         alert("SECRET UNLOCKED: AI Companion Drone added to your hangar inventory!");
         droneCheatStep = 0;
