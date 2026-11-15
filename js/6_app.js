@@ -189,7 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const count = inv[mod.id] || 0;
       const isSelected = selectedLoadoutModules.includes(mod.id);
       const isFull = selectedLoadoutModules.length >= 3 && !isSelected;
-      // Enforce unique selection rule: max 1 of each module type per loadout
       const alreadySelected = selectedLoadoutModules.includes(mod.id);
 
       return `
@@ -588,6 +587,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <div>${selected ? '<span style="color:#2ecc71; font-weight:bold;">SELECTED</span>' : `<button class="upgrade-btn green" onclick="selectColor('${c.hex}')">Select</button>`}</div>
         </div>`;
       });
+
+      html += `<h4 style="margin:16px 0 8px 0; color:#00f0ff;">AI Drone Colors</h4>`;
+      GALAXTAR_DATA.droneColors.forEach(dc => {
+        const selected = d.selectedDroneColor === dc.hex;
+        html += `<div class="upgrade-card">
+          <div class="upgrade-info"><h4 style="color:${dc.hex || '#00f0ff'};">${dc.name}</h4></div>
+          <div>${selected ? '<span style="color:#2ecc71; font-weight:bold;">SELECTED</span>' : `<button class="upgrade-btn green" onclick="selectDroneColor(${dc.hex ? `'${dc.hex}'` : 'null'})">Select</button>`}</div>
+        </div>`;
+      });
+
       html += `<h4 style="margin:16px 0 8px 0; color:#3498db;">Ship Shapes</h4>`;
       GALAXTAR_DATA.shapes.forEach(s => {
         const selected = d.selectedShipShape === s.id;
@@ -636,6 +645,11 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   window.selectColor = hex => {
     stats.data.selectedShipColor = hex;
+    stats.save();
+    renderUpgradeList();
+  };
+  window.selectDroneColor = hex => {
+    stats.data.selectedDroneColor = hex;
     stats.save();
     renderUpgradeList();
   };
