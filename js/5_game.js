@@ -496,7 +496,8 @@ class ExploreGameEngine {
         vx: 120,
         color: "#ff3366",
         shape: "octagon",
-        attackTimer: 0
+        attackTimer: 0,
+        rotationAngle: 0 // Added spinning rotation for Astral Titan!
       };
     } else if (tier === 80000) {
       this.boss = {
@@ -528,9 +529,9 @@ class ExploreGameEngine {
         color: "#ff9900",
         shape: "diamond",
         attackTimer: 0,
-        phoenixState: "normal", // normal -> rebirthing -> reborn
+        phoenixState: "normal",
         rebirthTimer: 0,
-        flameAngle: -0.8 // Sweeping angle tracker for the flame beam
+        flameAngle: -0.8
       };
     } else if (tier === 160000) {
       this.boss = {
@@ -598,14 +599,11 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 120000) {
-      // Helios Phoenix Flame Beam Animation (Dense, sweeping arc of fiery ember bullets)
       const isReborn = this.boss.phoenixState === "reborn";
       const flameCount = isReborn ? 7 : 5;
       
-      // Sweep the flame angle back and forth across a smooth arc
       this.boss.flameAngle = (this.boss.flameAngle || -0.8) + 0.35;
       if (this.boss.flameAngle > 0.8 || this.boss.flameAngle < -0.8) {
-        // Reverse sweep direction when hitting edges
         this.boss.flameAngle *= -1;
       }
 
@@ -749,7 +747,6 @@ class ExploreGameEngine {
         if (this.drone.fireTimer >= 0.35) {
           this.drone.fireTimer = 0;
 
-          // Scan for targets within an expanded 700-pixel radius (earlier detection)
           let target = null;
           let closestDist = 700;
 
@@ -785,7 +782,6 @@ class ExploreGameEngine {
             }
           }
 
-          // Only fire when a valid target is within range
           if (target) {
             this.droneBeams.push({
               x: this.drone.x,
@@ -941,20 +937,24 @@ class ExploreGameEngine {
     }
 
     if (this.isBossActive && this.boss) {
-      // Handle Phoenix Rebirth state transition animation / pause
       if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") {
         this.boss.rebirthTimer -= dt;
         if (this.boss.rebirthTimer <= 0) {
           this.boss.phoenixState = "reborn";
           this.boss.maxHp = 150;
           this.boss.hp = 150;
-          this.boss.color = "#ff2200"; // Intense fiery red
+          this.boss.color = "#ff2200";
           this.spawnExplosion(this.boss.x, this.boss.y, "#ffaa00", 50);
         }
         return; 
       }
 
       this.boss.x += this.boss.vx * dt;
+
+      // Update rotation angle for Astral Titan
+      if (this.boss.tier === 40000) {
+        this.boss.rotationAngle = (this.boss.rotationAngle || 0) + 1.2 * dt;
+      }
       
       const margin = 80;
       if (this.boss.x < margin) {
@@ -1474,10 +1474,13 @@ class ExploreGameEngine {
     });
   }
 
-  drawPolygon(shape, x, y, w, h, color, isEnemy = false) {
+  drawPolygon(shape, x, y, w, h, color, isEnemy = false, rotation = 0) {
     const ctx = this.ctx;
     ctx.save();
     ctx.translate(x, y);
+    if (rotation !== 0) {
+      ctx.rotate(rotation);
+    }
     ctx.fillStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 12;
@@ -1657,7 +1660,9 @@ class ExploreGameEngine {
         ctx.fill();
         ctx.restore();
       } else {
-        this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true);
+        // Pass rotation angle if it's the Astral Titan (tier 40000)
+        const titanRotation = this.boss.tier === 40000 ? this.boss.rotationAngle : 0;
+        this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true, titanRotation);
       }
     }
 
