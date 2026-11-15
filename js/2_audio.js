@@ -9,19 +9,22 @@ class AudioController {
     this.bgMusic.loop = true;
     this.bgMusic.volume = 0.5;
 
-    // Boss music track (falls back gracefully if not present, or uses main theme adjusted)
-    this.bossMusic = new Audio("galaxtartheme.m4a");
-    this.bossMusic.loop = true;
-    this.bossMusic.volume = 0.6;
+    // Procedural Boss Beat State
+    this.isBossMusicPlaying = false;
+    this.bossInterval = null;
 
     // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         this.bgMusic.pause();
-        this.bossMusic.pause();
+        this.stopBossSynth();
       } else {
         if (this.musicEnabled) {
-          this.bgMusic.play().catch(e => console.log("Music resume error:", e));
+          if (this.isBossMusicPlaying) {
+            this.startBossSynth();
+          } else {
+            this.bgMusic.play().catch(e => console.log("Music resume error:", e));
+          }
         }
       }
     });
@@ -34,7 +37,7 @@ class AudioController {
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && this.bgMusic.paused && this.bossMusic.paused) {
+    if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
       this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
   }
@@ -42,24 +45,88 @@ class AudioController {
   setMusicEnabled(val) {
     this.musicEnabled = val;
     if (val) {
-      this.bgMusic.play().catch(e => console.log("Music play error:", e));
+      if (this.isBossMusicPlaying) {
+        this.startBossSynth();
+      } else {
+        this.bgMusic.play().catch(e => console.log("Music play error:", e));
+      }
     } else {
       this.bgMusic.pause();
-      this.bossMusic.pause();
+      this.stopBossSynth();
     }
   }
 
   switchToBossMusic() {
-    if (!this.musicEnabled) return;
+    this.isBossMusicPlaying = true;
     this.bgMusic.pause();
-    this.bossMusic.currentTime = 0;
-    this.bossMusic.play().catch(e => console.log("Boss music play error:", e));
+    if (this.musicEnabled) {
+      this.startBossSynth();
+    }
   }
 
   switchToNormalMusic() {
-    if (!this.musicEnabled) return;
-    this.bossMusic.pause();
-    this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
+    this.isBossMusicPlaying = false;
+    this.stopBossSynth();
+    if (this.musicEnabled) {
+      this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
+    }
+  }
+
+  startBossSynth() {
+    this.init();
+    if (!this.audioCtx || this.bossInterval) return;
+
+    // Retro boss arpeggio & bassline loop
+    const bassNotes = [110, 110, 130.81, 98.00]; // A2, A2, C3, G2
+    const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
+    let step = 0;
+
+    this.bossInterval = setInterval(() => {
+      if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
+      
+      try {
+        const now = this.audioCtx.currentTime;
+
+        // 1. Pulsing Boss Bass Synth
+        const bassOsc = this.audioCtx.createOscillator();
+        const bassGain = this.audioCtx.createGain();
+        bassOsc.type = "sawtooth";
+        bassOsc.frequency.setValueAtTime(bassNotes[Math.floor(step / 2) % bassNotes.length], now);
+        
+        bassGain.gain.setValueAtTime(0.12, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(this.audioCtx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.2);
+
+        // 2. High Retro Arpeggio Lead
+        const leadOsc = this.audioCtx.createOscillator();
+        const leadGain = this.audioCtx.createGain();
+        leadOsc.type = "square";
+        leadOsc.frequency.setValueAtTime(leadNotes[step % leadNotes.length], now);
+
+        leadGain.gain.setValueAtTime(0.08, now);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+        leadOsc.connect(leadGain);
+        leadGain.connect(this.audioCtx.destination);
+        leadOsc.start(now);
+        leadOsc.stop(now + 0.15);
+
+        step++;
+      } catch (e) {
+        console.log("Boss synth tick error:", e);
+      }
+    }, 150); // Speed of the boss beat tempo
+  }
+
+  stopBossSynth() {
+    if (this.bossInterval) {
+      clearInterval(this.bossInterval);
+      this.bossInterval = null;
+    }
   }
 
   playGunSound() {
