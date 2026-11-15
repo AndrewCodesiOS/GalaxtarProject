@@ -4,27 +4,15 @@ class AudioController {
     this.musicEnabled = true;
     this.sfxEnabled = true;
     
-    // Background music setup using your m4a file
-    this.bgMusic = new Audio("galaxtartheme.m4a");
-    this.bgMusic.loop = true;
-    this.bgMusic.volume = 0.5;
-
-    // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
-    this.bossInterval = null;
+    this.musicTimerId = null;
 
-    // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
-        this.bgMusic.pause();
-        this.stopBossSynth();
+        this.stopMusic();
       } else {
         if (this.musicEnabled) {
-          if (this.isBossMusicPlaying) {
-            this.startBossSynth();
-          } else {
-            this.bgMusic.play().catch(e => console.log("Music resume error:", e));
-          }
+          this.startMusic();
         }
       }
     });
@@ -37,95 +25,97 @@ class AudioController {
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
-      this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
+    if (this.musicEnabled && !this.musicTimerId) {
+      this.startMusic();
     }
   }
 
   setMusicEnabled(val) {
     this.musicEnabled = val;
     if (val) {
-      if (this.isBossMusicPlaying) {
-        this.startBossSynth();
-      } else {
-        this.bgMusic.play().catch(e => console.log("Music play error:", e));
-      }
+      this.startMusic();
     } else {
-      this.bgMusic.pause();
-      this.stopBossSynth();
+      this.stopMusic();
     }
   }
 
   switchToBossMusic() {
     this.isBossMusicPlaying = true;
-    this.bgMusic.pause();
     if (this.musicEnabled) {
-      this.startBossSynth();
+      this.startMusic();
     }
   }
 
   switchToNormalMusic() {
     this.isBossMusicPlaying = false;
-    this.stopBossSynth();
     if (this.musicEnabled) {
-      this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
+      this.startMusic();
     }
   }
 
-  startBossSynth() {
+  startMusic() {
     this.init();
-    if (!this.audioCtx || this.bossInterval) return;
+    if (!this.audioCtx) return;
+    if (this.musicTimerId) {
+      clearInterval(this.musicTimerId);
+      this.musicTimerId = null;
+    }
 
-    // Retro boss arpeggio & bassline loop
-    const bassNotes = [110, 110, 130.81, 98.00]; // A2, A2, C3, G2
-    const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
+    const normalBass = [130.81, 98.00, 110.00, 87.31];
+    const normalLead = [261.63, 329.63, 392.00, 523.25];
+    const bossBass = [110.00, 110.00, 130.81, 98.00];
+    const bossLead = [220.00, 329.63, 440.00, 523.25, 440.00, 329.63];
+
     let step = 0;
+    const intervalTime = this.isBossMusicPlaying ? 180 : 280; // Slower, clean interval to prevent locking UI
 
-    this.bossInterval = setInterval(() => {
+    this.musicTimerId = setInterval(() => {
       if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
-      
+
       try {
         const now = this.audioCtx.currentTime;
+        const bNotes = this.isBossMusicPlaying ? bossBass : normalBass;
+        const lNotes = this.isBossMusicPlaying ? bossLead : normalLead;
 
-        // 1. Pulsing Boss Bass Synth
-        const bassOsc = this.audioCtx.createOscillator();
-        const bassGain = this.audioCtx.createGain();
-        bassOsc.type = "sawtooth";
-        bassOsc.frequency.setValueAtTime(bassNotes[Math.floor(step / 2) % bassNotes.length], now);
+        // Bass Note
+        const osc1 = this.audioCtx.createOscillator();
+        const gain1 = this.audioCtx.createGain();
+        osc1.type = this.isBossMusicPlaying ? "sawtooth" : "triangle";
+        osc1.frequency.setValueAtTime(bNotes[Math.floor(step / 2) % bNotes.length], now);
         
-        bassGain.gain.setValueAtTime(0.12, now);
-        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        gain1.gain.setValueAtTime(0.08, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-        bassOsc.connect(bassGain);
-        bassGain.connect(this.audioCtx.destination);
-        bassOsc.start(now);
-        bassOsc.stop(now + 0.2);
+        osc1.connect(gain1);
+        gain1.connect(this.audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.15);
 
-        // 2. High Retro Arpeggio Lead
-        const leadOsc = this.audioCtx.createOscillator();
-        const leadGain = this.audioCtx.createGain();
-        leadOsc.type = "square";
-        leadOsc.frequency.setValueAtTime(leadNotes[step % leadNotes.length], now);
+        // Lead Note
+        const osc2 = this.audioCtx.createOscillator();
+        const gain2 = this.audioCtx.createGain();
+        osc2.type = "square";
+        osc2.frequency.setValueAtTime(lNotes[step % lNotes.length], now);
 
-        leadGain.gain.setValueAtTime(0.08, now);
-        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        gain2.gain.setValueAtTime(0.05, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
-        leadOsc.connect(leadGain);
-        leadGain.connect(this.audioCtx.destination);
-        leadOsc.start(now);
-        leadOsc.stop(now + 0.15);
+        osc2.connect(gain2);
+        gain2.connect(this.audioCtx.destination);
+        osc2.start(now);
+        osc2.stop(now + 0.1);
 
         step++;
-      } catch (e) {
-        console.log("Boss synth tick error:", e);
+      } catch (err) {
+        // Silently catch any timing dropouts
       }
-    }, 150); // Speed of the boss beat tempo
+    }, intervalTime);
   }
 
-  stopBossSynth() {
-    if (this.bossInterval) {
-      clearInterval(this.bossInterval);
-      this.bossInterval = null;
+  stopMusic() {
+    if (this.musicTimerId) {
+      clearInterval(this.musicTimerId);
+      this.musicTimerId = null;
     }
   }
 
@@ -138,7 +128,7 @@ class AudioController {
     osc.type = "square";
     osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.12, this.audioCtx.currentTime);
     gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
     osc.connect(gain);
     gain.connect(this.audioCtx.destination);
@@ -155,7 +145,7 @@ class AudioController {
     osc.type = "sawtooth";
     osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
     osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
-    gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
     gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
     osc.connect(gain);
     gain.connect(this.audioCtx.destination);
@@ -167,7 +157,7 @@ class AudioController {
     if (!this.sfxEnabled) return;
     this.init();
     if (!this.audioCtx) return;
-    const bufferSize = this.audioCtx.sampleRate * 0.3;
+    const bufferSize = this.audioCtx.sampleRate * 0.25;
     const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -177,11 +167,11 @@ class AudioController {
     noise.buffer = buffer;
     const filter = this.audioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(isAsteroid ? 400 : 800, this.audioCtx.currentTime);
-    filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.3);
+    filter.frequency.setValueAtTime(isAsteroid ? 350 : 700, this.audioCtx.currentTime);
+    filter.frequency.linearRampToValueAtTime(40, this.audioCtx.currentTime + 0.25);
     const gain = this.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.audioCtx.destination);
