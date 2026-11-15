@@ -203,11 +203,11 @@ class ExploreGameEngine {
     this.activeModules = new Set(activeModules);
     this.phoenixAvailable = this.activeModules.has("phoenix_protocol");
     this.haloAvailable = this.activeModules.has("halo_barrier");
+    this.hasAiDrone = this.activeModules.has("ai_drone");
 
     const d = this.stats.data;
     const shieldInfo = GALAXTAR_DATA.shieldLevels[d.shieldLevel - 1];
     
-    // Calculate shield HP with stackable support for reinforced_hull (+2) and auxiliary_plating (+1)
     let bonusHP = 0;
     if (this.activeModules.has("reinforced_hull")) bonusHP += 2;
     if (this.activeModules.has("auxiliary_plating")) bonusHP += 1;
@@ -220,6 +220,14 @@ class ExploreGameEngine {
       hp: shieldInfo.maxHP + bonusHP,
       maxHP: shieldInfo.maxHP + bonusHP,
       hasRegen: shieldInfo.regen
+    };
+
+    // Initialize AI Drone position beside the ship if equipped
+    this.drone = {
+      x: this.ship.x + 45,
+      y: this.ship.y + 10,
+      w: 24,
+      h: 24
     };
 
     this.stars = [];
@@ -238,7 +246,6 @@ class ExploreGameEngine {
     this.isMouseDown = false;
     this.hasMovedDistance = false;
 
-    // Reset Boss States
     this.isBossActive = false;
     this.bossDefeatedAt20k = false;
     this.bossDefeatedAt40k = false;
@@ -662,7 +669,6 @@ class ExploreGameEngine {
     const d = this.stats.data;
     const thrusterInfo = GALAXTAR_DATA.thrusterLevels[d.thrusterLevel - 1];
     
-    // Apply Overdrive Thrusters (+10% speed boost) if equipped
     const overdriveMult = (this.activeModules && this.activeModules.has("overdrive_thrusters")) ? 1.1 : 1.0;
     const passiveDistanceMultiplier = thrusterInfo.speedMultiplier * overdriveMult;
     const speedMult = 1.0;
@@ -693,6 +699,14 @@ class ExploreGameEngine {
         if (this.keys["ArrowDown"] || this.keys["KeyS"]) this.ship.y += moveSpeed * dt;
         this.ship.x = Math.max(20, Math.min(this.canvas.width - 20, this.ship.x));
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
+      }
+
+      // Smoothly update AI Drone position to hover beside the ship
+      if (this.hasAiDrone && this.drone) {
+        const targetX = this.ship.x + 45;
+        const targetY = this.ship.y + 10;
+        this.drone.x += (targetX - this.drone.x) * 10 * dt;
+        this.drone.y += (targetY - this.drone.y) * 10 * dt;
       }
 
       if (this.isCharging) {
@@ -809,7 +823,6 @@ class ExploreGameEngine {
         const tier = Math.random();
         const size = tier < 0.5 ? 28 : tier < 0.85 ? 42 : 58;
         
-        // Asteroid Fracture Module: All asteroids take 1 shot
         const hasFracture = this.activeModules && this.activeModules.has("asteroid_fracture");
         const hp = hasFracture ? 1 : (size === 28 ? 2 : size === 42 ? 4 : 6);
 
@@ -974,13 +987,61 @@ class ExploreGameEngine {
     const hitBox = (ax, ay, aw, ah, bx, by, bw, bh) =>
       Math.abs(ax - bx) * 2 < aw + bw && Math.abs(ay - by) * 2 < ah + bh;
 
-    // Point Multiplier & Yield Amplifier Calculation Helper
     const getCalculatedPoints = (basePts) => {
       let mult = 1;
       if (this.activeModules && this.activeModules.has("bounty_scanner")) mult += 0.25;
       if (this.activeModules && this.activeModules.has("yield_amplifier")) mult += 0.50;
       return Math.ceil(basePts * mult);
     };
+
+    // AI Drone Continuous Laser Beam Damage Logic against Enemies & Asteroids
+    if (this.hasAiDrone && this.drone) {
+      const laserX = this.drone.x;
+      const laserY = this.drone.y;
+      const laserWidth = 10;
+
+      // Check laser against enemies
+      for (let j = this.enemies.length - 1; j >= 0; j--) {
+        const e = this.enemies[j];
+        if (Math.abs(e.x - laserX) < (e.w / 2 + laserWidth) && laserY > e.y - e.h / 2 && laserY < e.y + e.h / 2) {
+          e.hp -= 0.5; // continuous laser tick damage
+          if (e.hp <= 0) {
+            const pts = e.points;
+            this.sessionShips++;
+            if (!d.isPeacefulMode) {
+              this.sessionPoints += getCalculatedPoints(pts);
+            }
+            if (this.activeModules && this.activeModules.has("fuel_extractor")) {
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
+            }
+            this.audio.playExplosion(false);
+            this.spawnExplosion(e.x, e.y, e.color, 24);
+            this.enemies.splice(j, 1);
+          }
+        }
+      }
+
+      // Check laser against boss
+      if (this.isBossActive && this.boss) {
+        if (Math.abs(this.boss.x - laserX) < (this.boss.w / 2 + laserWidth) && laserY > this.boss.y - this.boss.h / 2 && laserY < this.boss.y + this.boss.h / 2) {
+          this.boss.hp -= 0.5;
+          if (this.boss.hp <= 0) {
+            this.resolveBossDefeat();
+          }
+        }
+      }
+
+      // Check laser against asteroids
+      for (let j = this.asteroids.length - 1; j >= 0; j--) {
+        const a = this.asteroids[j];
+        if (Math.abs(a.x - laserX) < (a.size / 2 + laserWidth) && laserY > a.y - a.size / 2 && laserY < a.y + a.size / 2) {
+          a.hp -= 0.5;
+          if (a.hp <= 0) {
+            this.destroyAsteroid(j, getCalculatedPoints);
+          }
+        }
+      }
+    }
 
     if (this.isBossActive && this.boss) {
       for (let i = this.bullets.length - 1; i >= 0; i--) {
@@ -1037,7 +1098,6 @@ class ExploreGameEngine {
               this.sessionPoints += getCalculatedPoints(pts);
             }
             
-            // Fuel Extractor Module: +1 fuel per enemy kill
             if (this.activeModules && this.activeModules.has("fuel_extractor")) {
               d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
             }
@@ -1188,7 +1248,6 @@ class ExploreGameEngine {
   }
 
   damagePlayer(amount) {
-    // Halo Barrier Module: absorbs 1 collision completely
     if (this.haloAvailable && amount >= 4) {
       this.haloAvailable = false;
       this.isInvulnerable = true;
@@ -1454,7 +1513,6 @@ class ExploreGameEngine {
         false
       );
 
-      // Render visual halo ring if Halo Barrier is active
       if (this.haloAvailable) {
         ctx.save();
         ctx.strokeStyle = "#00ffff";
@@ -1464,6 +1522,37 @@ class ExploreGameEngine {
         ctx.beginPath();
         ctx.arc(this.ship.x, this.ship.y, Math.max(this.ship.w, this.ship.h) * 0.75, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.restore();
+      }
+
+      // Render AI Companion Drone and its Continuous Laser Beam
+      if (this.hasAiDrone && this.drone) {
+        ctx.save();
+        // Draw continuous laser beam shooting straight up
+        ctx.strokeStyle = "#00f0ff";
+        ctx.lineWidth = 4;
+        ctx.shadowColor = "#00f0ff";
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.moveTo(this.drone.x, this.drone.y);
+        ctx.lineTo(this.drone.x, 0);
+        ctx.stroke();
+
+        // Draw core white beam center
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(this.drone.x, this.drone.y);
+        ctx.lineTo(this.drone.x, 0);
+        ctx.stroke();
+
+        // Draw Drone Body
+        ctx.fillStyle = "#00f0ff";
+        ctx.shadowColor = "#00f0ff";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(this.drone.x, this.drone.y, this.drone.w / 2, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
       }
     }
