@@ -134,7 +134,7 @@ const GALAXTAR_DATA = {
       desc: "Destroying enemy ships grants +1 fuel per kill."
     },
 
-    // --- EPIC ($150) ---
+    // --- EPIC ($150 - $200) ---
     {
       id: "phoenix_protocol",
       name: "Phoenix Protocol",
@@ -144,13 +144,13 @@ const GALAXTAR_DATA = {
       weight: 7,
       desc: "Survive 1 fatal hit with full HP restored and sends a blast that destroys nearby enemies."
     },
-   {
+    {
       id: "overclock_core",
       name: "Overclock Core",
       rarity: "EPIC",
-      color: "#f1c40f", // Updated to Epic gold/yellow
-      price: 150,       // Updated to Epic $150 price
-      weight: 7,        // Updated to Epic drop weight
+      color: "#f1c40f",
+      price: 150,
+      weight: 7,
       desc: "Increases projectile speed by 25% and adds +1 bullet damage."
     },
     {
@@ -161,6 +161,15 @@ const GALAXTAR_DATA = {
       price: 150,
       weight: 7,
       desc: "Surrounds your ship with an energy halo that absorbs 1 collision completely, then shatters."
+    },
+    {
+      id: "ai_drone",
+      name: "AI Companion Drone",
+      rarity: "EPIC",
+      color: "#00f0ff",
+      price: 200,
+      weight: 4,
+      desc: "Deploys an invincible AI companion drone that hovers near your ship and fires continuous laser beams."
     }
   ],
   enemyTypes: {
