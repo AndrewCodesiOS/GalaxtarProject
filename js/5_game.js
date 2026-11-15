@@ -68,7 +68,7 @@ class ExploreGameEngine {
     this.isGameOver = false;
     this.isManualEnd = false;
 
-    // Boss State Properties & Milestone Trackers
+    // Boss State Properties & Milestone Trackers (Hidden from UI text)
     this.isBossActive = false;
     this.bossDefeatedAt20k = false;
     this.bossDefeatedAt40k = false;
@@ -214,8 +214,12 @@ class ExploreGameEngine {
       h: d.selectedShipShape === "octagon" ? 50 : d.selectedShipShape === "square" ? 55 : 60,
       hp: shieldInfo.maxHP + bonusHP,
       maxHP: shieldInfo.maxHP + bonusHP,
-      hasRegen: shieldInfo.regen
+      hasRegen: shieldInfo.regen || this.activeModules.has("void_shield_gen")
     };
+
+    if (this.activeModules.has("ion_capacitor")) {
+      d.currentFuel = Math.min(this.stats.maxFuel() + 50, d.currentFuel + 50);
+    }
 
     this.stars = [];
     this.planets = [];
@@ -233,7 +237,6 @@ class ExploreGameEngine {
     this.isMouseDown = false;
     this.hasMovedDistance = false;
 
-    // Reset Boss States
     this.isBossActive = false;
     this.bossDefeatedAt20k = false;
     this.bossDefeatedAt40k = false;
@@ -247,7 +250,7 @@ class ExploreGameEngine {
         x: Math.random() * this.canvas.width,
         y: Math.random() * this.canvas.height,
         size: 1.2 + Math.random() * 2.2,
-        speed: 45 + Math.random() * 85,
+        speed: (45 + Math.random() * 85) * (this.activeModules.has("stellar_compass") ? 1.2 : 1),
         color: Math.random() < 0.2 ? "#9bd4ff" : "#ffffff"
       });
     }
@@ -324,6 +327,7 @@ class ExploreGameEngine {
     const isOverclocked = this.activeModules && this.activeModules.has("overclock_core");
     const bSpeed = isOverclocked ? 650 : 520;
     const bonusDmg = isOverclocked ? 1 : 0;
+    const doubleProjectiles = this.activeModules && this.activeModules.has("quantum_accelerator");
 
     const spawnB = (ox, size, dmg) => {
       const heat = wLvl === 5 && Math.random() <= 0.15;
@@ -336,6 +340,17 @@ class ExploreGameEngine {
         damage: dmg + bonusDmg,
         isHeatSeeking: heat
       });
+      if (doubleProjectiles) {
+        this.bullets.push({
+          x: this.ship.x + ox + (ox === 0 ? 12 : 0),
+          y: this.ship.y - this.ship.h / 2,
+          size,
+          speed: bSpeed,
+          color,
+          damage: dmg + bonusDmg,
+          isHeatSeeking: heat
+        });
+      }
     };
 
     if (wLvl === 1) {
@@ -463,7 +478,6 @@ class ExploreGameEngine {
     }
   }
 
-  // --- MEGA BOSS TRIGGER SYSTEM (20k, 40k, 60k, 80k, 100k) ---
   triggerMegaBoss(tier) {
     this.isBossActive = true;
     this.audio.switchToBossMusic();
@@ -471,86 +485,16 @@ class ExploreGameEngine {
     this.asteroids = [];
 
     if (tier === 20000) {
-      this.boss = {
-        tier: 20000,
-        name: "ASTRAL TITAN (MK I)",
-        x: this.canvas.width / 2,
-        y: 120,
-        w: 120,
-        h: 90,
-        maxHp: 150,
-        hp: 150,
-        vx: 120,
-        color: "#ff3366",
-        shape: "octagon",
-        attackTimer: 0
-      };
+      this.boss = { tier: 20000, name: "ASTRAL TITAN (MK I)", x: this.canvas.width / 2, y: 120, w: 120, h: 90, maxHp: 150, hp: 150, vx: 120, color: "#ff3366", shape: "octagon", attackTimer: 0 };
     } else if (tier === 40000) {
-      this.boss = {
-        tier: 40000,
-        name: "VORTEX INTERCEPTOR 'THE SINGULARITY CORE'",
-        x: this.canvas.width / 2,
-        y: 100,
-        w: 110,
-        h: 110,
-        maxHp: 220,
-        hp: 220,
-        vx: 140,
-        color: "#00ffff",
-        shape: "circle",
-        attackTimer: 0,
-        timer: 0
-      };
+      this.boss = { tier: 40000, name: "VORTEX INTERCEPTOR 'THE SINGULARITY CORE'", x: this.canvas.width / 2, y: 100, w: 110, h: 110, maxHp: 220, hp: 220, vx: 140, color: "#00ffff", shape: "circle", attackTimer: 0, timer: 0 };
     } else if (tier === 60000) {
       this.solarFirewalls = [];
-      this.boss = {
-        tier: 60000,
-        name: "SOLAR DREADNOUGHT 'HELIOS PHOENIX'",
-        x: this.canvas.width / 2,
-        y: 110,
-        w: 130,
-        h: 100,
-        maxHp: 300,
-        hp: 300,
-        vx: 160,
-        color: "#ff9900",
-        shape: "diamond",
-        attackTimer: 0,
-        firewallTimer: 0
-      };
+      this.boss = { tier: 60000, name: "SOLAR DREADNOUGHT 'HELIOS PHOENIX'", x: this.canvas.width / 2, y: 110, w: 130, h: 100, maxHp: 300, hp: 300, vx: 160, color: "#ff9900", shape: "diamond", attackTimer: 0, firewallTimer: 0 };
     } else if (tier === 80000) {
-      this.boss = {
-        tier: 80000,
-        name: "QUANTUM SWARM MATRIX 'HYDRA-9'",
-        x: this.canvas.width / 2,
-        y: 120,
-        w: 140,
-        h: 90,
-        maxHp: 400,
-        hp: 400,
-        vx: 180,
-        color: "#9900ff",
-        shape: "square",
-        attackTimer: 0,
-        orbitAngle: 0
-      };
+      this.boss = { tier: 80000, name: "QUANTUM SWARM MATRIX 'HYDRA-9'", x: this.canvas.width / 2, y: 120, w: 140, h: 90, maxHp: 400, hp: 400, vx: 180, color: "#9900ff", shape: "square", attackTimer: 0, orbitAngle: 0 };
     } else if (tier === 100000) {
-      this.boss = {
-        tier: 100000,
-        name: "THE VOID ARCHITECT 'ETERNITY ENGINE'",
-        x: this.canvas.width / 2,
-        y: 100,
-        w: 160,
-        h: 110,
-        maxHp: 600,
-        hp: 600,
-        vx: 100,
-        color: "#ffffff",
-        shape: "octagon",
-        attackTimer: 0,
-        phase: 1,
-        beamTimer: 0
-      };
+      this.boss = { tier: 100000, name: "THE VOID ARCHITECT 'ETERNITY ENGINE'", x: this.canvas.width / 2, y: 100, w: 160, h: 110, maxHp: 600, hp: 600, vx: 100, color: "#ffffff", shape: "octagon", attackTimer: 0, phase: 1, beamTimer: 0 };
     }
   }
 
@@ -560,69 +504,27 @@ class ExploreGameEngine {
 
     if (this.boss.tier === 20000) {
       [-0.5, -0.25, 0, 0.25, 0.5].forEach(ang => {
-        this.enemyBullets.push({
-          x: this.boss.x + (ang * 60),
-          y: this.boss.y + this.boss.h / 2,
-          vx: ang * 150,
-          vy: spd,
-          size: 10,
-          color: "#ff3366"
-        });
+        this.enemyBullets.push({ x: this.boss.x + (ang * 60), y: this.boss.y + this.boss.h / 2, vx: ang * 150, vy: spd, size: 10, color: "#ff3366" });
       });
     } else if (this.boss.tier === 40000) {
-      const numBullets = 10;
-      for (let i = 0; i < numBullets; i++) {
-        const angle = (Math.PI * 2 / numBullets) * i;
-        this.enemyBullets.push({
-          x: this.boss.x,
-          y: this.boss.y,
-          vx: Math.cos(angle) * 220,
-          vy: Math.sin(angle) * 220,
-          size: 8,
-          color: "#00ffff"
-        });
+      for (let i = 0; i < 10; i++) {
+        const angle = (Math.PI * 2 / 10) * i;
+        this.enemyBullets.push({ x: this.boss.x, y: this.boss.y, vx: Math.cos(angle) * 220, vy: Math.sin(angle) * 220, size: 8, color: "#00ffff" });
       }
     } else if (this.boss.tier === 60000) {
       [-0.6, -0.3, 0, 0.3, 0.6].forEach(ang => {
-        this.enemyBullets.push({
-          x: this.boss.x,
-          y: this.boss.y + this.boss.h / 2,
-          vx: ang * 180,
-          vy: spd * 1.2,
-          size: 9,
-          color: "#ff9900"
-        });
+        this.enemyBullets.push({ x: this.boss.x, y: this.boss.y + this.boss.h / 2, vx: ang * 180, vy: spd * 1.2, size: 9, color: "#ff9900" });
       });
-      this.solarFirewalls.push({
-        x: Math.random() * (this.canvas.width - 200),
-        y: this.boss.y + 120,
-        w: 220,
-        h: 16,
-        life: 5.0
-      });
+      this.solarFirewalls.push({ x: Math.random() * (this.canvas.width - 200), y: this.boss.y + 120, w: 220, h: 16, life: 5.0 });
     } else if (this.boss.tier === 80000) {
       for (let i = -3; i <= 3; i++) {
-        this.enemyBullets.push({
-          x: this.boss.x + (i * 20),
-          y: this.boss.y + this.boss.h / 2,
-          vx: i * 70,
-          vy: spd * 1.3,
-          size: 7,
-          color: "#9900ff"
-        });
+        this.enemyBullets.push({ x: this.boss.x + (i * 20), y: this.boss.y + this.boss.h / 2, vx: i * 70, vy: spd * 1.3, size: 7, color: "#9900ff" });
       }
     } else if (this.boss.tier === 100000) {
       if (this.boss.hp <= 300) this.boss.phase = 2;
       const spread = this.boss.phase === 2 ? 7 : 4;
       for (let i = -spread; i <= spread; i++) {
-        this.enemyBullets.push({
-          x: this.boss.x,
-          y: this.boss.y + this.boss.h / 2,
-          vx: i * 50,
-          vy: 340,
-          size: 11,
-          color: this.boss.phase === 2 ? "#ff0055" : "#ffffff"
-        });
+        this.enemyBullets.push({ x: this.boss.x, y: this.boss.y + this.boss.h / 2, vx: i * 50, vy: 340, size: 11, color: this.boss.phase === 2 ? "#ff0055" : "#ffffff" });
       }
     }
   }
@@ -631,16 +533,7 @@ class ExploreGameEngine {
     for (let i = 0; i < count; i++) {
       const ang = Math.random() * Math.PI * 2;
       const spd = 80 + Math.random() * 220;
-      this.particles.push({
-        x,
-        y,
-        vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd,
-        size: 2.5 + Math.random() * 3,
-        color,
-        age: 0,
-        life: 0.4 + Math.random() * 0.5
-      });
+      this.particles.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, size: 2.5 + Math.random() * 3, color, age: 0, life: 0.4 + Math.random() * 0.5 });
     }
   }
 
@@ -665,17 +558,11 @@ class ExploreGameEngine {
         this.elapsedTime += dt;
         this.distance += 220 * passiveDistanceMultiplier * dt;
 
-        if (this.distance >= 20000 && !this.bossDefeatedAt20k && !this.isBossActive) {
-          this.triggerMegaBoss(20000);
-        } else if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
-          this.triggerMegaBoss(40000);
-        } else if (this.distance >= 60000 && !this.bossDefeatedAt60k && !this.isBossActive) {
-          this.triggerMegaBoss(60000);
-        } else if (this.distance >= 80000 && !this.bossDefeatedAt80k && !this.isBossActive) {
-          this.triggerMegaBoss(80000);
-        } else if (this.distance >= 100000 && !this.bossDefeatedAt100k && !this.isBossActive) {
-          this.triggerMegaBoss(100000);
-        }
+        if (this.distance >= 20000 && !this.bossDefeatedAt20k && !this.isBossActive) this.triggerMegaBoss(20000);
+        else if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) this.triggerMegaBoss(40000);
+        else if (this.distance >= 60000 && !this.bossDefeatedAt60k && !this.isBossActive) this.triggerMegaBoss(60000);
+        else if (this.distance >= 80000 && !this.bossDefeatedAt80k && !this.isBossActive) this.triggerMegaBoss(80000);
+        else if (this.distance >= 100000 && !this.bossDefeatedAt100k && !this.isBossActive) this.triggerMegaBoss(100000);
       }
 
       const moveSpeed = 360;
@@ -699,7 +586,8 @@ class ExploreGameEngine {
       }
       if (this.ship.hp < this.ship.maxHP && this.ship.hasRegen) {
         this.regenTimer += dt;
-        if (this.regenTimer >= 16.0) {
+        const regenInterval = this.activeModules && this.activeModules.has("void_shield_gen") ? 8.0 : 16.0;
+        if (this.regenTimer >= regenInterval) {
           this.ship.hp++;
           this.regenTimer = 0;
         }
@@ -734,19 +622,14 @@ class ExploreGameEngine {
         this.trailTimer += dt;
         if (this.trailTimer >= 0.025) {
           this.trailTimer = 0;
-          this.trails.push({
-            x: this.ship.x,
-            y: this.ship.y + this.ship.h / 2 + 6,
-            size: 14,
-            alpha: 0.75,
-            color: d.selectedShipColor
-          });
+          this.trails.push({ x: this.ship.x, y: this.ship.y + this.ship.h / 2 + 6, size: 14, alpha: 0.75, color: d.selectedShipColor });
         }
       }
     }
 
+    const starSpeedFactor = this.activeModules && this.activeModules.has("stellar_compass") ? 1.2 : 1.0;
     for (const s of this.stars) {
-      s.y += s.speed * speedMult * dt;
+      s.y += s.speed * speedMult * starSpeedFactor * dt;
       if (s.y > this.canvas.height) {
         s.y = -4;
         s.x = Math.random() * this.canvas.width;
@@ -758,13 +641,7 @@ class ExploreGameEngine {
     if (this.planetSpawnTimer >= 9.5) {
       this.planetSpawnTimer = 0;
       const colors = ["#3498db", "#e67e22", "#9b59b6", "#1abc9c"];
-      this.planets.push({
-        x: 40 + Math.random() * (this.canvas.width - 80),
-        y: -50,
-        r: 18 + Math.random() * 22,
-        speed: 40 + Math.random() * 25,
-        color: colors[Math.floor(Math.random() * colors.length)]
-      });
+      this.planets.push({ x: 40 + Math.random() * (this.canvas.width - 80), y: -50, r: 18 + Math.random() * 22, speed: 40 + Math.random() * 25, color: colors[Math.floor(Math.random() * colors.length)] });
     }
     this.planets = this.planets.filter(p => {
       p.y += p.speed * speedMult * dt;
@@ -778,12 +655,7 @@ class ExploreGameEngine {
     this.shootingStarTimer += dt * speedMult;
     if (this.shootingStarTimer >= 13.0) {
       this.shootingStarTimer = 0;
-      this.shootingStars.push({
-        x: Math.random() * this.canvas.width,
-        y: -20,
-        vx: (Math.random() < 0.5 ? -1 : 1) * 260,
-        vy: 420
-      });
+      this.shootingStars.push({ x: Math.random() * this.canvas.width, y: -20, vx: (Math.random() < 0.5 ? -1 : 1) * 260, vy: 420 });
     }
     this.shootingStars = this.shootingStars.filter(ss => {
       ss.x += ss.vx * dt;
@@ -804,18 +676,7 @@ class ExploreGameEngine {
         const hp = size === 28 ? 2 : size === 42 ? 4 : 6;
         const fuelReward = size === 28 ? 2 : size === 42 ? 4 : 6;
         const pointReward = size === 28 ? 2 : size === 42 ? 5 : 10;
-        this.asteroids.push({
-          x: 30 + Math.random() * (this.canvas.width - 60),
-          y: -40,
-          size,
-          hp,
-          fuelReward,
-          pointReward,
-          speed: 110 + Math.random() * 60,
-          rot: 0,
-          rotSpeed: (Math.random() - 0.5) * 2.5,
-          color: "#8d6e63"
-        });
+        this.asteroids.push({ x: 30 + Math.random() * (this.canvas.width - 60), y: -40, size, hp, fuelReward, pointReward, speed: 110 + Math.random() * 60, rot: 0, rotSpeed: (Math.random() - 0.5) * 2.5, color: "#8d6e63" });
       }
 
       const spawnMult = (d.isHardcoreMode ? 4.0 : 1.0) * this.dynamicSpawnMult;
@@ -826,29 +687,11 @@ class ExploreGameEngine {
       }
     }
 
-    // Boss AI Loop & Strict Boundary Clamp (Applies to ALL bosses including 20k Titan)
     if (this.isBossActive && this.boss) {
       this.boss.x += this.boss.vx * dt;
-      
       const margin = 80;
-      if (this.boss.x < margin) {
-        this.boss.x = margin;
-        this.boss.vx *= -1;
-      } else if (this.boss.x > this.canvas.width - margin) {
-        this.boss.x = this.canvas.width - margin;
-        this.boss.vx *= -1;
-      }
-
-      if (this.boss.tier === 40000) {
-        this.boss.timer++;
-        const pullActive = Math.floor(this.boss.timer / 120) % 2 === 0;
-        if (pullActive) {
-          const centerX = this.canvas.width / 2;
-          const pullStrength = 0.4;
-          if (this.ship.x < centerX) this.ship.x += pullStrength;
-          if (this.ship.x > centerX) this.ship.x -= pullStrength;
-        }
-      }
+      if (this.boss.x < margin) { this.boss.x = margin; this.boss.vx *= -1; }
+      else if (this.boss.x > this.canvas.width - margin) { this.boss.x = this.canvas.width - margin; this.boss.vx *= -1; }
 
       if (this.boss.tier === 60000) {
         this.solarFirewalls.forEach(fw => {
@@ -874,27 +717,8 @@ class ExploreGameEngine {
         e.y += 150 * enemySpeedMult * dt;
         return e.y < this.canvas.height + e.h;
       }
-
-      let dodgeX = 0;
-      for (const b of this.bullets) {
-        const dist = Math.hypot(b.x - e.x, b.y - e.y);
-        if (dist < 130 && e.y < this.ship.y && Math.random() < 0.25) {
-          dodgeX = b.x < e.x ? 260 : -260;
-          break;
-        }
-      }
-
-      if (e.y < this.ship.y) {
-        const dx = this.ship.x - e.x;
-        const dir = Math.sign(dx);
-        e.vx = dodgeX !== 0 ? dodgeX : dir * 130 * enemySpeedMult;
-      } else {
-        e.vx = 0;
-      }
-
       e.x += e.vx * dt;
       e.y += 150 * enemySpeedMult * dt;
-
       if (!this.isGameOver && e.y < this.ship.y) {
         e.shotTimer += dt;
         if (e.shotTimer >= 1.0) {
@@ -964,7 +788,6 @@ class ExploreGameEngine {
     const hitBox = (ax, ay, aw, ah, bx, by, bw, bh) =>
       Math.abs(ax - bx) * 2 < aw + bw && Math.abs(ay - by) * 2 < ah + bh;
 
-    // Boss Bullet & Damage Collisions
     if (this.isBossActive && this.boss) {
       for (let i = this.bullets.length - 1; i >= 0; i--) {
         const b = this.bullets[i];
@@ -972,31 +795,18 @@ class ExploreGameEngine {
           this.boss.hp -= b.damage;
           this.spawnExplosion(b.x, b.y, this.boss.color, 6);
           this.bullets.splice(i, 1);
-
-          if (this.boss.hp <= 0) {
-            this.resolveBossDefeat();
-            return; // Exit collision pass immediately to prevent stale reference freezes
-          }
+          if (this.boss.hp <= 0) { this.resolveBossDefeat(); return; }
           break;
         }
       }
-
       for (let i = this.chargeBullets.length - 1; i >= 0; i--) {
         const b = this.chargeBullets[i];
         if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
           this.boss.hp -= b.damage;
           this.chargeBullets.splice(i, 1);
-
-          if (this.boss.hp <= 0) {
-            this.resolveBossDefeat();
-            return;
-          }
+          if (this.boss.hp <= 0) { this.resolveBossDefeat(); return; }
           break;
         }
-      }
-
-      if (hitBox(this.boss?.x || 0, this.boss?.y || 0, this.boss?.w || 0, this.boss?.h || 0, this.ship.x, this.ship.y, this.ship.w, this.ship.h)) {
-        this.damagePlayer(999);
       }
     }
 
@@ -1008,21 +818,12 @@ class ExploreGameEngine {
         const e = this.enemies[j];
         if (hitBox(b.x, b.y, b.size, b.size, e.x, e.y, e.w, e.h)) {
           let dmg = b.damage;
-          if (Math.random() <= 0.01) dmg *= Math.random() < 0.5 ? 2 : 3;
           e.hp -= dmg;
           this.spawnExplosion(b.x, b.y, "#e67e22", 6);
           consumed = true;
 
           if (e.hp <= 0) {
-            const pts = e.points;
-            this.sessionShips++;
-            if (!d.isPeacefulMode) {
-              const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-              this.sessionPoints += Math.ceil(pts * pointMult);
-            }
-            this.audio.playExplosion(false);
-            this.spawnExplosion(e.x, e.y, e.color, 24);
-            this.enemies.splice(j, 1);
+            this.destroyEnemy(j, e);
           }
           break;
         }
@@ -1032,17 +833,15 @@ class ExploreGameEngine {
         for (let j = this.asteroids.length - 1; j >= 0; j--) {
           const a = this.asteroids[j];
           if (hitBox(b.x, b.y, b.size, b.size, a.x, a.y, a.size, a.size)) {
-            a.hp -= b.damage;
+            const deflectorBonus = this.activeModules && this.activeModules.has("asteroid_deflector") && a.size === 28 ? 2 : 1;
+            a.hp -= b.damage * deflectorBonus;
             this.spawnExplosion(b.x, b.y, "#e67e22", 6);
             consumed = true;
-            if (a.hp <= 0) {
-              this.destroyAsteroid(j);
-            }
+            if (a.hp <= 0) { this.destroyAsteroid(j); }
             break;
           }
         }
       }
-
       if (consumed) this.bullets.splice(i, 1);
     }
 
@@ -1054,17 +853,7 @@ class ExploreGameEngine {
         if (hitBox(b.x, b.y, b.size, b.size, e.x, e.y, e.w, e.h)) {
           e.hp -= b.damage;
           consumed = true;
-          if (e.hp <= 0) {
-            const pts = e.points;
-            this.sessionShips++;
-            if (!d.isPeacefulMode) {
-              const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-              this.sessionPoints += Math.ceil(pts * pointMult);
-            }
-            this.audio.playExplosion(false);
-            this.spawnExplosion(e.x, e.y, e.color, 26);
-            this.enemies.splice(j, 1);
-          }
+          if (e.hp <= 0) { this.destroyEnemy(j, e); }
           break;
         }
       }
@@ -1086,23 +875,14 @@ class ExploreGameEngine {
       const eb = this.enemyBullets[i];
       if (hitBox(eb.x, eb.y, eb.size, eb.size, this.ship.x, this.ship.y, this.ship.w * 0.8, this.ship.h * 0.8)) {
         this.enemyBullets.splice(i, 1);
-        if (!this.isInvulnerable) {
-          this.damagePlayer(1);
-        }
+        if (!this.isInvulnerable) { this.damagePlayer(1); }
       }
     }
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       if (hitBox(e.x, e.y, e.w * 0.85, e.h * 0.85, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
-        const pts = e.points;
-        this.sessionShips++;
-        if (!d.isPeacefulMode) {
-          const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
-          this.sessionPoints += Math.ceil(pts * pointMult);
-        }
-        this.spawnExplosion(e.x, e.y, e.color, 24);
-        this.enemies.splice(i, 1);
+        this.destroyEnemy(i, e);
         this.damagePlayer(999);
         break;
       }
@@ -1117,10 +897,35 @@ class ExploreGameEngine {
     }
   }
 
+  destroyEnemy(j, e) {
+    const d = this.stats.data;
+    const pts = e.points;
+    this.sessionShips++;
+    if (!d.isPeacefulMode) {
+      const pointMult = (this.activeModules && this.activeModules.has("bounty_scanner")) ? 1.25 : 1;
+      this.sessionPoints += Math.ceil(pts * pointMult);
+    }
+    this.audio.playExplosion(false);
+    this.spawnExplosion(e.x, e.y, e.color, 24);
+    this.enemies.splice(j, 1);
+
+    if (this.activeModules && this.activeModules.has("singularity_core")) {
+      for (let k = this.enemies.length - 1; k >= 0; k--) {
+        const other = this.enemies[k];
+        if (Math.hypot(other.x - e.x, other.y - e.y) < 140) {
+          other.hp -= 8;
+          if (other.hp <= 0) {
+            this.destroyEnemy(k, other);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   resolveBossDefeat() {
     if (!this.boss) return;
     const tier = this.boss.tier;
-    
     this.audio.playExplosion(false);
     this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 60);
 
@@ -1140,7 +945,6 @@ class ExploreGameEngine {
     this.isBossActive = false;
     this.solarFirewalls = [];
     this.enemyBullets = [];
-
     this.audio.switchToNormalMusic();
   }
 
@@ -1219,12 +1023,7 @@ class ExploreGameEngine {
       d.lastSessionPoints = this.sessionPoints;
 
       this.stats.save();
-
-      this.logManager.generateFlightLog({
-        distance: distInt,
-        shipsDestroyed: this.sessionShips,
-        isNewRecord
-      });
+      this.logManager.generateFlightLog({ distance: distInt, shipsDestroyed: this.sessionShips, isNewRecord });
     }
 
     this.onFlightComplete({
