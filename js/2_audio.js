@@ -76,18 +76,19 @@ class AudioController {
     this.init();
     if (!this.audioCtx || this.bossInterval) return;
 
-    // Retro boss arpeggio & bassline loop
-    const bassNotes = [110, 110, 130.81, 98.00]; // A2, A2, C3, G2
+    const bassNotes = [110, 110, 130.81, 98.00];
     const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
     let step = 0;
 
     this.bossInterval = setInterval(() => {
-      if (!this.musicEnabled || !this.audioCtx || this.audioCtx.state !== "running") return;
+      if (!this.musicEnabled || !this.audioCtx) return;
+      if (this.audioCtx.state === "suspended") {
+        this.audioCtx.resume();
+      }
       
       try {
         const now = this.audioCtx.currentTime;
 
-        // 1. Pulsing Boss Bass Synth
         const bassOsc = this.audioCtx.createOscillator();
         const bassGain = this.audioCtx.createGain();
         bassOsc.type = "sawtooth";
@@ -101,7 +102,6 @@ class AudioController {
         bassOsc.start(now);
         bassOsc.stop(now + 0.2);
 
-        // 2. High Retro Arpeggio Lead
         const leadOsc = this.audioCtx.createOscillator();
         const leadGain = this.audioCtx.createGain();
         leadOsc.type = "square";
@@ -119,7 +119,7 @@ class AudioController {
       } catch (e) {
         console.log("Boss synth tick error:", e);
       }
-    }, 150); // Speed of the boss beat tempo
+    }, 150);
   }
 
   stopBossSynth() {
@@ -133,6 +133,8 @@ class AudioController {
     if (!this.sfxEnabled) return;
     this.init();
     if (!this.audioCtx) return;
+    if (this.audioCtx.state === "suspended") this.audioCtx.resume();
+
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
     osc.type = "square";
@@ -150,6 +152,8 @@ class AudioController {
     if (!this.sfxEnabled) return;
     this.init();
     if (!this.audioCtx) return;
+    if (this.audioCtx.state === "suspended") this.audioCtx.resume();
+
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
     osc.type = "sawtooth";
@@ -167,6 +171,8 @@ class AudioController {
     if (!this.sfxEnabled) return;
     this.init();
     if (!this.audioCtx) return;
+    if (this.audioCtx.state === "suspended") this.audioCtx.resume();
+
     const bufferSize = this.audioCtx.sampleRate * 0.3;
     const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
