@@ -331,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div style="background: rgba(20, 20, 28, 0.9); border: 1px solid ${isPurchased ? '#2ecc71' : 'rgba(255,255,255,0.15)'}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.7rem; font-weight: bold; color: ${mod.color};">${mod.rarity}</span>
-            <span style="font-size: 0.85rem; font-weight: bold; color: #f1c40f;">$${mod.price} pts</span>
+            <span style="font-size: 0.85rem; font-weight: bold; color: #f1c40f;">${mod.price} pts</span>
           </div>
           <h4 style="color: #fff; font-size: 0.95rem; margin: 2px 0;">${mod.name}</h4>
           <p style="font-size: 0.78rem; color: #ccc; line-height: 1.3;">${mod.desc}</p>
