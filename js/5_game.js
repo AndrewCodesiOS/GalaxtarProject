@@ -257,8 +257,10 @@ class ExploreGameEngine {
     this.shootingStarTimer = 0;
     this.trailTimer = 0;
 
-    this.lastFuelDeductDist = 0;
-    this.lastSolarChargeDist = 0;
+    // Time-based fuel and solar recharge accumulators
+    this.fuelTimer = 0;
+    this.solarTimer = 0;
+
     this.nextDifficultyMilestone = 9000 + Math.random() * 7000;
     this.dynamicSpawnMult = 1.0;
 
@@ -503,14 +505,21 @@ class ExploreGameEngine {
       }
 
       if (!d.isPeacefulMode) {
-        if (this.distance - this.lastFuelDeductDist >= 1500) {
-          const baseCost = d.isHardcoreMode ? 4 : 2;
+        // Time-based fuel consumption tick (1 fuel every 1.5s standard, doubled in hardcore)
+        this.fuelTimer += dt;
+        if (this.fuelTimer >= 1.5) {
+          const baseCost = d.isHardcoreMode ? 2 : 1;
           this.stats.consumeFuel(baseCost);
-          this.lastFuelDeductDist = this.distance;
+          this.fuelTimer = 0;
         }
-        if (this.distance - this.lastSolarChargeDist >= 6000) {
-          this.stats.addSolarFuel();
-          this.lastSolarChargeDist = this.distance;
+
+        // Time-based solar charging tick (+4 fuel every 12 seconds for Level 5 Solar Reactor)
+        if (d.fuelLevel >= 5) {
+          this.solarTimer += dt;
+          if (this.solarTimer >= 12.0) {
+            this.stats.addSolarFuel();
+            this.solarTimer = 0;
+          }
         }
       }
 
