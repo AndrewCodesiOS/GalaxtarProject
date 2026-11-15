@@ -507,7 +507,7 @@ class ExploreGameEngine {
       if (!d.isPeacefulMode) {
         // Time-based fuel consumption tick (1 fuel every 1.5s standard, doubled in hardcore)
         this.fuelTimer += dt;
-        if (this.fuelTimer >= 1.0) {
+        if (this.fuelTimer >= 2.0) {
           const baseCost = d.isHardcoreMode ? 5 : 3;
           this.stats.consumeFuel(baseCost);
           this.fuelTimer = 0;
