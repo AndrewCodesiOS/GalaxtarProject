@@ -497,7 +497,7 @@ class ExploreGameEngine {
         color: "#ff3366",
         shape: "octagon",
         attackTimer: 0,
-        rotationAngle: 0 // Added spinning rotation for Astral Titan!
+        rotationAngle: 0
       };
     } else if (tier === 80000) {
       this.boss = {
@@ -534,6 +534,7 @@ class ExploreGameEngine {
         flameAngle: -0.8
       };
     } else if (tier === 160000) {
+      // Hydra-9 Carrier Rework: 3 total waves of 3 smaller ships (9 total minions) + Toned-Down Pulse
       this.boss = {
         tier: 160000,
         name: "QUANTUM SWARM MATRIX 'HYDRA-9'",
@@ -543,11 +544,12 @@ class ExploreGameEngine {
         h: 90,
         maxHp: 400,
         hp: 400,
-        vx: 180,
+        vx: 140,
         color: "#9900ff",
         shape: "square",
         attackTimer: 0,
-        orbitAngle: 0
+        swarmTimer: 0,
+        wavesSpawned: 0
       };
     } else if (tier === 200000) {
       this.boss = {
@@ -622,16 +624,17 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 160000) {
-      for (let i = -3; i <= 3; i++) {
+      // Hydra-9 Toned-Down Twin Pulse Attack
+      [-40, 40].forEach(offsetX => {
         this.enemyBullets.push({
-          x: this.boss.x + (i * 20),
-          y: this.boss.y + this.boss.h / 2,
-          vx: i * 70,
-          vy: spd * 1.3,
-          size: 7,
-          color: "#9900ff"
+          x: this.boss.x + offsetX,
+          y: this.boss.y + this.boss.h,
+          vx: 0,
+          vy: 180,
+          size: 10,
+          color: "#c084fc"
         });
-      }
+      });
     } else if (this.boss.tier === 200000) {
       if (this.boss.hp <= 300) this.boss.phase = 2;
       
@@ -670,6 +673,31 @@ class ExploreGameEngine {
           });
         }
       }
+    }
+  }
+
+  spawnHydraWave3x3() {
+    if (!this.boss) return;
+    const offsets = [-75, 0, 75];
+    offsets.forEach(offset => {
+      this.enemies.push({
+        typeKey: "normal",
+        x: Math.max(40, Math.min(this.canvas.width - 40, this.boss.x + offset)),
+        y: this.boss.y + this.boss.h,
+        w: 28,
+        h: 28,
+        color: "#b033ff",
+        shape: "square",
+        hp: 3,
+        points: 2,
+        shotTimer: Math.random() * 1.0,
+        vx: 0,
+        vy: 100,
+        isDodging: false
+      });
+    });
+    if (this.audio && typeof this.audio.playChargeBeamSound === "function") {
+      this.audio.playChargeBeamSound();
     }
   }
 
@@ -973,6 +1001,18 @@ class ExploreGameEngine {
           const pullStrength = 0.4;
           if (this.ship.x < centerX) this.ship.x += pullStrength;
           if (this.ship.x > centerX) this.ship.x -= pullStrength;
+        }
+      }
+
+      // Hydra-9 Carrier Wave Spawning logic (3 total waves of 3 smaller ships = 9 total minions)
+      if (this.boss.tier === 160000) {
+        if (this.boss.wavesSpawned < 3) {
+          this.boss.swarmTimer += dt;
+          if (this.boss.swarmTimer >= 6.0) {
+            this.boss.swarmTimer = 0;
+            this.boss.wavesSpawned++;
+            this.spawnHydraWave3x3();
+          }
         }
       }
 
@@ -1660,7 +1700,6 @@ class ExploreGameEngine {
         ctx.fill();
         ctx.restore();
       } else {
-        // Pass rotation angle if it's the Astral Titan (tier 40000)
         const titanRotation = this.boss.tier === 40000 ? this.boss.rotationAngle : 0;
         this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true, titanRotation);
       }
