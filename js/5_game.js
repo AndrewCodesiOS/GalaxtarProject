@@ -1013,15 +1013,17 @@ class ExploreGameEngine {
         }
       }
 
-      // Hydra-9 Carrier Wave Spawning logic (3 total waves of 3 smaller ships = 9 total minions)
+      // Hydra-9 Continuous Swarm Matrix: respawn 3 minions whenever active minion count drops to 0
       if (this.boss.tier === 160000) {
-        if (this.boss.wavesSpawned < 3) {
+        const activeMinions = this.enemies.filter(e => e.isHydraMinion).length;
+        if (activeMinions === 0) {
           this.boss.swarmTimer += dt;
-          if (this.boss.swarmTimer >= 6.0) {
+          if (this.boss.swarmTimer >= 4.0) {
             this.boss.swarmTimer = 0;
-            this.boss.wavesSpawned++;
             this.spawnHydraWave3x3();
           }
+        } else {
+          this.boss.swarmTimer = 0;
         }
       }
 
