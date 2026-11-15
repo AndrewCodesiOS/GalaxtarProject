@@ -25,6 +25,10 @@ class AudioController {
     if (!this.audioCtx) {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    // Automatically resume if browser suspended the context due to idling or focus shifts
+    if (this.audioCtx.state === "suspended") {
+      this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
+    }
     if (this.musicEnabled && this.bgMusic.paused) {
       this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
