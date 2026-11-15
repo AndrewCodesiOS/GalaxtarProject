@@ -68,10 +68,15 @@ class ExploreGameEngine {
     this.isGameOver = false;
     this.isManualEnd = false;
 
-    // Boss State Properties
+    // Boss State Properties & Milestone Trackers
     this.isBossActive = false;
     this.bossDefeatedAt20k = false;
+    this.bossDefeatedAt40k = false;
+    this.bossDefeatedAt60k = false;
+    this.bossDefeatedAt80k = false;
+    this.bossDefeatedAt100k = false;
     this.boss = null;
+    this.solarFirewalls = []; // For 60k Boss mechanics
 
     this.keys = {};
     this.activeTouches = new Map();
@@ -218,6 +223,7 @@ class ExploreGameEngine {
     this.enemyBullets = [];
     this.particles = [];
     this.trails = [];
+    this.solarFirewalls = [];
     this.activeTouches.clear();
     this.shipDragTouchId = null;
     this.isMouseDown = false;
@@ -226,6 +232,10 @@ class ExploreGameEngine {
     // Reset Boss States
     this.isBossActive = false;
     this.bossDefeatedAt20k = false;
+    this.bossDefeatedAt40k = false;
+    this.bossDefeatedAt60k = false;
+    this.bossDefeatedAt80k = false;
+    this.bossDefeatedAt100k = false;
     this.boss = null;
 
     for (let i = 0; i < 85; i++) {
@@ -444,45 +454,172 @@ class ExploreGameEngine {
     }
   }
 
-  triggerMegaBoss() {
+  // --- MEGA BOSS TRIGGER SYSTEM (20k, 40k, 60k, 80k, 100k) ---
+  triggerMegaBoss(tier) {
     this.isBossActive = true;
     this.audio.switchToBossMusic();
-    
-    // Clear regular active enemies/asteroids for a clean arena feel
     this.enemies = [];
     this.asteroids = [];
 
-    // Instantiate the First Mega Boss (The Astral Titan)
-    this.boss = {
-      name: "ASTRAL TITAN (MK I)",
-      x: this.canvas.width / 2,
-      y: 120,
-      w: 120,
-      h: 90,
-      maxHp: 150,
-      hp: 150,
-      vx: 120,
-      color: "#ff3366",
-      shape: "octagon",
-      attackTimer: 0,
-      pattern: 0
-    };
+    if (tier === 20000) {
+      this.boss = {
+        tier: 20000,
+        name: "ASTRAL TITAN (MK I)",
+        x: this.canvas.width / 2,
+        y: 120,
+        w: 120,
+        h: 90,
+        maxHp: 150,
+        hp: 150,
+        vx: 120,
+        color: "#ff3366",
+        shape: "octagon",
+        attackTimer: 0
+      };
+    } else if (tier === 40000) {
+      this.boss = {
+        tier: 40000,
+        name: "VORTEX INTERCEPTOR 'THE SINGULARITY CORE'",
+        x: this.canvas.width / 2,
+        y: 100,
+        w: 110,
+        h: 110,
+        maxHp: 220,
+        hp: 220,
+        vx: 140,
+        color: "#00ffff",
+        shape: "circle",
+        attackTimer: 0,
+        timer: 0
+      };
+    } else if (tier === 60000) {
+      this.solarFirewalls = [];
+      this.boss = {
+        tier: 60000,
+        name: "SOLAR DREADNOUGHT 'HELIOS PHOENIX'",
+        x: this.canvas.width / 2,
+        y: 110,
+        w: 130,
+        h: 100,
+        maxHp: 300,
+        hp: 300,
+        vx: 160,
+        color: "#ff9900",
+        shape: "diamond",
+        attackTimer: 0,
+        firewallTimer: 0
+      };
+    } else if (tier === 80000) {
+      this.boss = {
+        tier: 80000,
+        name: "QUANTUM SWARM MATRIX 'HYDRA-9'",
+        x: this.canvas.width / 2,
+        y: 120,
+        w: 140,
+        h: 90,
+        maxHp: 400,
+        hp: 400,
+        vx: 180,
+        color: "#9900ff",
+        shape: "square",
+        attackTimer: 0,
+        orbitAngle: 0
+      };
+    } else if (tier === 100000) {
+      this.boss = {
+        tier: 100000,
+        name: "THE VOID ARCHITECT 'ETERNITY ENGINE'",
+        x: this.canvas.width / 2,
+        y: 100,
+        w: 160,
+        h: 110,
+        maxHp: 600,
+        hp: 600,
+        vx: 100,
+        color: "#ffffff",
+        shape: "octagon",
+        attackTimer: 0,
+        phase: 1,
+        beamTimer: 0
+      };
+    }
   }
 
   bossShoot() {
     if (!this.boss) return;
-    const spd = 260;
-    const angles = [-0.5, -0.25, 0, 0.25, 0.5];
-    angles.forEach(ang => {
-      this.enemyBullets.push({
-        x: this.boss.x + (ang * 60),
-        y: this.boss.y + this.boss.h / 2,
-        vx: ang * 150,
-        vy: spd,
-        size: 10,
-        color: "#ff3366"
+    const spd = 280;
+
+    if (this.boss.tier === 20000) {
+      [-0.5, -0.25, 0, 0.25, 0.5].forEach(ang => {
+        this.enemyBullets.push({
+          x: this.boss.x + (ang * 60),
+          y: this.boss.y + this.boss.h / 2,
+          vx: ang * 150,
+          vy: spd,
+          size: 10,
+          color: "#ff3366"
+        });
       });
-    });
+    } else if (this.boss.tier === 40000) {
+      // Circular ring spread attack
+      const numBullets = 10;
+      for (let i = 0; i < numBullets; i++) {
+        const angle = (Math.PI * 2 / numBullets) * i;
+        this.enemyBullets.push({
+          x: this.boss.x,
+          y: this.boss.y,
+          vx: Math.cos(angle) * 220,
+          vy: Math.sin(angle) * 220,
+          size: 8,
+          color: "#00ffff"
+        });
+      }
+    } else if (this.boss.tier === 60000) {
+      // Solar plasma fan & firewall trigger
+      [-0.6, -0.3, 0, 0.3, 0.6].forEach(ang => {
+        this.enemyBullets.push({
+          x: this.boss.x,
+          y: this.boss.y + this.boss.h / 2,
+          vx: ang * 180,
+          vy: spd * 1.2,
+          size: 9,
+          color: "#ff9900"
+        });
+      });
+      // Drop a firewall trail barrier across canvas
+      this.solarFirewalls.push({
+        x: Math.random() * (this.canvas.width - 200),
+        y: this.boss.y + 120,
+        w: 220,
+        h: 16,
+        life: 5.0
+      });
+    } else if (this.boss.tier === 80000) {
+      // Swarm multi-directional needles
+      for (let i = -3; i <= 3; i++) {
+        this.enemyBullets.push({
+          x: this.boss.x + (i * 20),
+          y: this.boss.y + this.boss.h / 2,
+          vx: i * 70,
+          vy: spd * 1.3,
+          size: 7,
+          color: "#9900ff"
+        });
+      }
+    } else if (this.boss.tier === 100000) {
+      if (this.boss.hp <= 300) this.boss.phase = 2; // Enrage Phase 2
+      const spread = this.boss.phase === 2 ? 7 : 4;
+      for (let i = -spread; i <= spread; i++) {
+        this.enemyBullets.push({
+          x: this.boss.x,
+          y: this.boss.y + this.boss.h / 2,
+          vx: i * 50,
+          vy: 340,
+          size: 11,
+          color: this.boss.phase === 2 ? "#ff0055" : "#ffffff"
+        });
+      }
+    }
   }
 
   spawnExplosion(x, y, color, count = 22) {
@@ -524,9 +661,17 @@ class ExploreGameEngine {
         this.elapsedTime += dt;
         this.distance += 220 * passiveDistanceMultiplier * dt;
 
-        // Check for First Mega Boss trigger at 20,000 meters
+        // Check distance milestones for all 5 Mega Bosses
         if (this.distance >= 20000 && !this.bossDefeatedAt20k && !this.isBossActive) {
-          this.triggerMegaBoss();
+          this.triggerMegaBoss(20000);
+        } else if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
+          this.triggerMegaBoss(40000);
+        } else if (this.distance >= 60000 && !this.bossDefeatedAt60k && !this.isBossActive) {
+          this.triggerMegaBoss(60000);
+        } else if (this.distance >= 80000 && !this.bossDefeatedAt80k && !this.isBossActive) {
+          this.triggerMegaBoss(80000);
+        } else if (this.distance >= 100000 && !this.bossDefeatedAt100k && !this.isBossActive) {
+          this.triggerMegaBoss(100000);
         }
       }
 
@@ -644,7 +789,7 @@ class ExploreGameEngine {
       return true;
     });
 
-    // Pause regular asteroid/enemy spawns while the Boss is active
+    // Pause regular asteroid/enemy spawns while any Boss is active
     if (!this.isBossActive) {
       this.asteroidSpawnTimer += dt * speedMult;
       if (this.asteroidSpawnTimer >= 3.2) {
@@ -676,14 +821,39 @@ class ExploreGameEngine {
       }
     }
 
-    // Boss AI Loop
+    // Boss AI Loop & Unique Mechanics
     if (this.isBossActive && this.boss) {
       this.boss.x += this.boss.vx * dt;
       if (this.boss.x < 80 || this.boss.x > this.canvas.width - 80) {
         this.boss.vx *= -1;
       }
+
+      // 40k Boss Special Mechanic: Gravitational Pull on Player
+      if (this.boss.tier === 40000) {
+        this.boss.timer++;
+        const pullActive = Math.floor(this.boss.timer / 120) % 2 === 0;
+        if (pullActive) {
+          const centerX = this.canvas.width / 2;
+          const pullStrength = 0.4;
+          if (this.ship.x < centerX) this.ship.x += pullStrength;
+          if (this.ship.x > centerX) this.ship.x -= pullStrength;
+        }
+      }
+
+      // 60k Boss Firewall Update
+      if (this.boss.tier === 60000) {
+        this.solarFirewalls.forEach(fw => {
+          fw.life -= dt;
+          if (Math.abs(this.ship.x - (fw.x + fw.w / 2)) < fw.w / 2 && Math.abs(this.ship.y - fw.y) < 15) {
+            if (!this.isInvulnerable) this.damagePlayer(1);
+          }
+        });
+        this.solarFirewalls = this.solarFirewalls.filter(fw => fw.life > 0);
+      }
+
       this.boss.attackTimer += dt;
-      if (this.boss.attackTimer >= 1.2) {
+      const attackInterval = this.boss.tier === 100000 && this.boss.phase === 2 ? 0.8 : 1.2;
+      if (this.boss.attackTimer >= attackInterval) {
         this.boss.attackTimer = 0;
         this.bossShoot();
       }
@@ -785,24 +955,17 @@ class ExploreGameEngine {
     const hitBox = (ax, ay, aw, ah, bx, by, bw, bh) =>
       Math.abs(ax - bx) * 2 < aw + bw && Math.abs(ay - by) * 2 < ah + bh;
 
-    // Boss Bullet Collisions
+    // Boss Bullet & Damage Collisions
     if (this.isBossActive && this.boss) {
       for (let i = this.bullets.length - 1; i >= 0; i--) {
         const b = this.bullets[i];
         if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
           this.boss.hp -= b.damage;
-          this.spawnExplosion(b.x, b.y, "#ff3366", 6);
+          this.spawnExplosion(b.x, b.y, this.boss.color, 6);
           this.bullets.splice(i, 1);
 
           if (this.boss.hp <= 0) {
-            this.audio.playExplosion(false);
-            this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 50);
-            this.sessionPoints += 50; // Big bonus points for defeating the boss
-            this.sessionShips++;
-            this.boss = null;
-            this.isBossActive = false;
-            this.bossDefeatedAt20k = true;
-            this.audio.switchToNormalMusic();
+            this.resolveBossDefeat();
           }
           break;
         }
@@ -815,20 +978,12 @@ class ExploreGameEngine {
           this.chargeBullets.splice(i, 1);
 
           if (this.boss.hp <= 0) {
-            this.audio.playExplosion(false);
-            this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 50);
-            this.sessionPoints += 50;
-            this.sessionShips++;
-            this.boss = null;
-            this.isBossActive = false;
-            this.bossDefeatedAt20k = true;
-            this.audio.switchToNormalMusic();
+            this.resolveBossDefeat();
           }
           break;
         }
       }
 
-      // Boss collision with player
       if (hitBox(this.boss?.x || 0, this.boss?.y || 0, this.boss?.w || 0, this.boss?.h || 0, this.ship.x, this.ship.y, this.ship.w, this.ship.h)) {
         this.damagePlayer(999);
       }
@@ -940,6 +1095,28 @@ class ExploreGameEngine {
         this.damagePlayer(4);
       }
     }
+  }
+
+  resolveBossDefeat() {
+    if (!this.boss) return;
+    const tier = this.boss.tier;
+    this.audio.playExplosion(false);
+    this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 60);
+
+    const rewards = { 20000: 50, 40000: 100, 60000: 175, 80000: 250, 100000: 500 };
+    this.sessionPoints += rewards[tier] || 50;
+    this.sessionShips++;
+
+    if (tier === 20000) this.bossDefeatedAt20k = true;
+    if (tier === 40000) this.bossDefeatedAt40k = true;
+    if (tier === 60000) this.bossDefeatedAt60k = true;
+    if (tier === 80000) this.bossDefeatedAt80k = true;
+    if (tier === 100000) this.bossDefeatedAt100k = true;
+
+    this.boss = null;
+    this.isBossActive = false;
+    this.solarFirewalls = [];
+    this.audio.switchToNormalMusic();
   }
 
   destroyAsteroid(index) {
@@ -1138,6 +1315,16 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
+    // Render Solar Firewalls (60k Boss Obstacles)
+    for (const fw of this.solarFirewalls) {
+      ctx.save();
+      ctx.fillStyle = "#ff5500";
+      ctx.shadowColor = "#ff9900";
+      ctx.shadowBlur = 15;
+      ctx.fillRect(fw.x, fw.y, fw.w, fw.h);
+      ctx.restore();
+    }
+
     if (this.isCharging) {
       ctx.save();
       ctx.fillStyle = "#ffffff";
@@ -1178,7 +1365,7 @@ class ExploreGameEngine {
       this.drawPolygon(e.shape, e.x, e.y, e.w, e.h, e.color, true);
     }
 
-    // Render Mega Boss if active
+    // Render Active Mega Boss
     if (this.isBossActive && this.boss) {
       this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true);
     }
@@ -1217,7 +1404,7 @@ class ExploreGameEngine {
 
     // Render Visible Boss Health Bar at Top Center if Boss is Active
     if (this.isBossActive && this.boss) {
-      const bossBarW = Math.min(300, this.canvas.width * 0.6);
+      const bossBarW = Math.min(320, this.canvas.width * 0.6);
       const bossBarH = 18;
       const bossBarX = (this.canvas.width - bossBarW) / 2;
       const bossBarY = 25;
@@ -1225,14 +1412,14 @@ class ExploreGameEngine {
 
       ctx.save();
       ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-      ctx.strokeStyle = "#ff3366";
+      ctx.strokeStyle = this.boss.color;
       ctx.lineWidth = 2;
-      ctx.shadowColor = "#ff3366";
+      ctx.shadowColor = this.boss.color;
       ctx.shadowBlur = 10;
       ctx.fillRect(bossBarX, bossBarY, bossBarW, bossBarH);
       ctx.strokeRect(bossBarX, bossBarY, bossBarW, bossBarH);
 
-      ctx.fillStyle = "#ff3366";
+      ctx.fillStyle = this.boss.color;
       ctx.fillRect(bossBarX + 2, bossBarY + 2, (bossBarW - 4) * bossHpPercent, bossBarH - 4);
 
       ctx.fillStyle = "#ffffff";
