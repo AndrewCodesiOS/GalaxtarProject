@@ -49,14 +49,14 @@ const GALAXTAR_DATA = {
     { name: "Diamond", id: "diamond", cost: 2000, color: "#e74c3c" }
   ],
   modules: [
-    /* Commons ($35 pts) */
+    /* Commons ($25 pts) */
     {
       id: "fuel_scavenger",
       name: "Fuel Scavenger",
       rarity: "COMMON",
       color: "#2ecc71",
       weight: 20,
-      price: 35,
+      price: 25,
       desc: "Asteroids restore +40% bonus fuel when destroyed. (Single-use)"
     },
     {
@@ -65,7 +65,7 @@ const GALAXTAR_DATA = {
       rarity: "COMMON",
       color: "#2ecc71",
       weight: 20,
-      price: 35,
+      price: 25,
       desc: "Earn +25% bonus points from all ships and asteroids. (Single-use)"
     },
     {
@@ -74,7 +74,7 @@ const GALAXTAR_DATA = {
       rarity: "COMMON",
       color: "#2ecc71",
       weight: 18,
-      price: 35,
+      price: 25,
       desc: "Start the flight with +2 bonus Shield HP. (Single-use)"
     },
     {
@@ -83,18 +83,18 @@ const GALAXTAR_DATA = {
       rarity: "COMMON",
       color: "#2ecc71",
       weight: 18,
-      price: 35,
+      price: 25,
       desc: "Starfield objects pass 20% faster, increasing visual flow. (Single-use)"
     },
 
-    /* Rares ($75 pts) */
+    /* Rares ($55 pts) */
     {
       id: "cryo_thrusters",
       name: "Cryo-Regulator",
       rarity: "RARE",
       color: "#3498db",
       weight: 12,
-      price: 75,
+      price: 55,
       desc: "Reduces passive fuel burn over distance by 25%. (Single-use)"
     },
     {
@@ -103,7 +103,7 @@ const GALAXTAR_DATA = {
       rarity: "RARE",
       color: "#9b59b6",
       weight: 10,
-      price: 75,
+      price: 55,
       desc: "Increases projectile speed by 25% and adds +1 bullet damage. (Single-use)"
     },
     {
@@ -112,7 +112,7 @@ const GALAXTAR_DATA = {
       rarity: "RARE",
       color: "#3498db",
       weight: 10,
-      price: 75,
+      price: 55,
       desc: "Small asteroids take double damage from all weapons. (Single-use)"
     },
     {
@@ -121,18 +121,18 @@ const GALAXTAR_DATA = {
       rarity: "RARE",
       color: "#9b59b6",
       weight: 10,
-      price: 75,
+      price: 55,
       desc: "Increases max fuel capacity by +50 for the run. (Single-use)"
     },
 
-    /* Epics ($150 pts) */
+    /* Epics ($115 pts) */
     {
       id: "phoenix_protocol",
       name: "Phoenix Protocol",
       rarity: "EPIC",
       color: "#f1c40f",
       weight: 6,
-      price: 150,
+      price: 115,
       desc: "Survive 1 fatal hit with full HP restored and a screen blast. (Single-use)"
     },
     {
@@ -141,7 +141,7 @@ const GALAXTAR_DATA = {
       rarity: "EPIC",
       color: "#f1c40f",
       weight: 5,
-      price: 150,
+      price: 115,
       desc: "Double weapon projectile count for the entire flight. (Single-use)"
     },
     {
@@ -150,7 +150,7 @@ const GALAXTAR_DATA = {
       rarity: "EPIC",
       color: "#f1c40f",
       weight: 5,
-      price: 150,
+      price: 115,
       desc: "Grants continuous passive shield regeneration every 8s. (Single-use)"
     },
     {
@@ -159,7 +159,7 @@ const GALAXTAR_DATA = {
       rarity: "EPIC",
       color: "#e74c3c",
       weight: 4,
-      price: 150,
+      price: 115,
       desc: "Defeated enemies trigger a chain reaction explosion. (Single-use)"
     }
   ],
