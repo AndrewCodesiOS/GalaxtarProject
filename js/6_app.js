@@ -712,30 +712,16 @@ document.addEventListener("DOMContentLoaded", () => {
         setToggleState(idPrefix, false);
         if (onChange) onChange(false);
 
-        if (settingKey === "isPeacefulMode") {
-          if (!false && droneCheatStep === 0) {
-            droneCheatStep = 1;
-          } else {
-            droneCheatStep = 0;
-          }
-        } else if (settingKey === "isHardcoreMode") {
-          if (!false && droneCheatStep === 3) {
-            droneCheatStep = 4;
-          } else {
-            droneCheatStep = 0;
-          }
-        } else if (settingKey === "musicOn") {
-          if (!false && droneCheatStep === 5) {
-            droneCheatStep = 6;
-          } else {
-            droneCheatStep = 0;
-          }
-        } else if (settingKey === "sfxOn") {
-          if (!false && droneCheatStep === 7) {
-            droneCheatStep = 8;
-          } else {
-            droneCheatStep = 0;
-          }
+        if (settingKey === "isPeacefulMode" && droneCheatStep === 1) {
+          droneCheatStep = 2;
+        } else if (settingKey === "isHardcoreMode" && droneCheatStep === 3) {
+          droneCheatStep = 4;
+        } else if (settingKey === "musicOn" && droneCheatStep === 5) {
+          droneCheatStep = 6;
+        } else if (settingKey === "sfxOn" && droneCheatStep === 7) {
+          droneCheatStep = 8;
+        } else {
+          droneCheatStep = 0;
         }
       });
     }
@@ -753,88 +739,24 @@ document.addEventListener("DOMContentLoaded", () => {
         setToggleState(idPrefix, true);
         if (onChange) onChange(true);
 
-        if (settingKey === "isPeacefulMode") {
-          if (true && droneCheatStep === 1) {
-            droneCheatStep = 2;
-          } else {
-            droneCheatStep = 0;
-          }
-        } else if (settingKey === "isHardcoreMode") {
-          if (true && droneCheatStep === 1) {
-            droneCheatStep = 2;
-          } else {
-            droneCheatStep = 0;
-          }
-        } else if (settingKey === "musicOn") {
-          if (val && droneCheatStep === 6) {
-            droneCheatStep = 7;
-          } else {
-            droneCheatStep = 0;
-          }
-        } else if (settingKey === "sfxOn") {
-          if (val && droneCheatStep === 8) {
-            droneCheatStep = 9; // Note: adjusted step index sync for sequence flow
-          } else if (cheatStep === 3 && val) {
-            cheatStep = 4;
-          } else {
-            droneCheatStep = 0;
-          }
+        if (settingKey === "sfxOn" && cheatStep === 3) {
+          cheatStep = 4;
+        } else if (settingKey === "musicOn" && cheatStep === 4) {
+          cheatStep = 5;
+        } else if (settingKey === "isPeacefulMode" && droneCheatStep === 0) {
+          droneCheatStep = 1;
+        } else if (settingKey === "isHardcoreMode" && droneCheatStep === 2) {
+          droneCheatStep = 3;
+        } else if (settingKey === "musicOn" && droneCheatStep === 4) {
+          droneCheatStep = 5;
+        } else if (settingKey === "sfxOn" && droneCheatStep === 6) {
+          droneCheatStep = 7;
+        } else {
+          if (cheatStep < 3) cheatStep = 0;
         }
       });
     }
   };
-
-  // Dedicated discrete sequence wiring for the drone cheat:
-  // Peaceful ON -> Peaceful OFF -> Hardcore ON -> Hardcore OFF -> Music OFF -> Music ON -> SFX OFF -> SFX ON -> Reset Prompt -> Cancel
-  const setPeacefulOff = document.getElementById("set-peaceful-off");
-  const setPeacefulOn = document.getElementById("set-peaceful-on");
-  const setHardcoreOff = document.getElementById("set-hardcore-off");
-  const setHardcoreOn = document.getElementById("set-hardcore-on");
-  const setMusicOff = document.getElementById("set-music-off");
-  const setMusicOn = document.getElementById("set-music-on");
-  const setSfxOff = document.getElementById("set-sfx-off");
-  const setSfxOn = document.getElementById("set-sfx-on");
-
-  if (setPeacefulOn) {
-    setPeacefulOn.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 0) ? 1 : 0;
-    });
-  }
-  if (setPeacefulOff) {
-    setPeacefulOff.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 1) ? 2 : 0;
-    });
-  }
-  if (setHardcoreOn) {
-    setHardcoreOn.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 2) ? 3 : 0;
-    });
-  }
-  if (setHardcoreOff) {
-    setHardcoreOff.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 3) ? 4 : 0;
-    });
-  }
-  if (setMusicOff) {
-    setMusicOff.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 4) ? 5 : 0;
-    });
-  }
-  if (setMusicOn) {
-    setMusicOn.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 5) ? 6 : 0;
-    });
-  }
-  if (setSfxOff) {
-    setSfxOff.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 6) ? 7 : 0;
-    });
-  }
-  if (setSfxOn) {
-    setSfxOn.addEventListener("click", () => {
-      droneCheatStep = (droneCheatStep === 7) ? 8 : 0;
-    });
-  }
 
   setupToggle("set-peaceful", "isPeacefulMode");
   setupToggle("set-hardcore", "isHardcoreMode");
