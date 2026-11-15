@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ownedModules = GALAXTAR_DATA.modules.filter(m => (inv[m.id] || 0) > 0);
 
     if (ownedModules.length === 0) {
-      loadoutList.innerHTML = `<p style="text-align: center; color: #777; padding: 18px; font-size: 0.85rem;">No modules in hangar.<br>Reach 10,000m in a flight to recover RNG modules!</p>`;
+      loadoutList.innerHTML = `<p style="text-align: center; color: #777; padding: 18px; font-size: 0.85rem;">No modules in hangar.<br>Complete deep-space runs to purchase modules from the telemetry shop!</p>`;
       return;
     }
 
@@ -298,24 +298,65 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Post-Flight Shop Logic (Offers 3 random modules to purchase)
   let lastRunResult = null;
-  const moduleRewardModal = document.getElementById("module-reward-modal");
-  const btnClaimModule = document.getElementById("btn-claim-module");
+  let currentShopOfferings = [];
+  const moduleShopModal = document.getElementById("module-shop-modal");
+  const shopPlayerPoints = document.getElementById("shop-player-points");
+  const moduleShopList = document.getElementById("module-shop-list");
+  const btnCloseShop = document.getElementById("btn-close-shop");
 
-  function rollRandomModule() {
-    const pool = GALAXTAR_DATA.modules;
-    const totalWeight = pool.reduce((sum, m) => sum + m.weight, 0);
-    let roll = Math.random() * totalWeight;
-    for (const mod of pool) {
-      if (roll < mod.weight) return mod;
-      roll -= mod.weight;
+  function getRandomShopOfferings() {
+    const pool = [...GALAXTAR_DATA.modules];
+    const offered = [];
+    for (let i = 0; i < 3; i++) {
+      if (pool.length === 0) break;
+      const index = Math.floor(Math.random() * pool.length);
+      offered.push(pool[index]);
+      pool.splice(index, 1);
     }
-    return pool[0];
+    return offered;
   }
 
-  if (btnClaimModule) {
-    btnClaimModule.addEventListener("click", () => {
-      if (moduleRewardModal) moduleRewardModal.classList.add("hidden");
+  function renderShopModal() {
+    if (!moduleShopList) return;
+    if (shopPlayerPoints) shopPlayerPoints.innerText = `Points Available: ${stats.data.totalPoints} pts`;
+
+    moduleShopList.innerHTML = currentShopOfferings.map((mod, idx) => {
+      const canAfford = stats.data.totalPoints >= mod.price;
+      const isPurchased = mod.purchased;
+
+      return `
+        <div style="background: rgba(20, 20, 28, 0.9); border: 1px solid ${isPurchased ? '#2ecc71' : 'rgba(255,255,255,0.15)'}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.7rem; font-weight: bold; color: ${mod.color};">${mod.rarity}</span>
+            <span style="font-size: 0.85rem; font-weight: bold; color: #f1c40f;">${mod.price} pts</span>
+          </div>
+          <h4 style="color: #fff; font-size: 0.95rem; margin: 2px 0;">${mod.name}</h4>
+          <p style="font-size: 0.78rem; color: #ccc; line-height: 1.3;">${mod.desc}</p>
+          <button class="upgrade-btn ${isPurchased ? 'disabled' : (canAfford ? 'green' : 'disabled')}" ${isPurchased || !canAfford ? 'disabled' : ''} onclick="buyShopModule(${idx})">
+            ${isPurchased ? 'STORED IN HANGAR' : 'PURCHASE'}
+          </button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.buyShopModule = function(idx) {
+    const mod = currentShopOfferings[idx];
+    if (!mod || mod.purchased) return;
+    if (stats.data.totalPoints >= mod.price) {
+      stats.data.totalPoints -= mod.price;
+      stats.addModule(mod.id, 1);
+      mod.purchased = true;
+      stats.save();
+      renderShopModal();
+    }
+  };
+
+  if (btnCloseShop) {
+    btnCloseShop.addEventListener("click", () => {
+      if (moduleShopModal) moduleShopModal.classList.add("hidden");
       showView("view-menu");
     });
   }
@@ -325,21 +366,10 @@ document.addEventListener("DOMContentLoaded", () => {
     btnContinue.addEventListener("click", () => {
       document.getElementById("gameover-overlay").classList.add("hidden");
       if (lastRunResult && !lastRunResult.isPeaceful && lastRunResult.distance >= 10000) {
-        const awarded = rollRandomModule();
-        stats.addModule(awarded.id, 1);
-
-        const rarityEl = document.getElementById("reward-mod-rarity");
-        const nameEl = document.getElementById("reward-mod-name");
-        const descEl = document.getElementById("reward-mod-desc");
-        if (rarityEl) {
-          rarityEl.innerText = awarded.rarity;
-          rarityEl.style.color = awarded.color;
-        }
-        if (nameEl) nameEl.innerText = awarded.name;
-        if (descEl) descEl.innerText = awarded.desc;
-
-        if (moduleRewardModal) {
-          moduleRewardModal.classList.remove("hidden");
+        currentShopOfferings = getRandomShopOfferings().map(m => ({ ...m, purchased: false }));
+        renderShopModal();
+        if (moduleShopModal) {
+          moduleShopModal.classList.remove("hidden");
           return;
         }
       }
