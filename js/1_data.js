@@ -36,10 +36,18 @@ const GALAXTAR_DATA = {
   ],
   colors: [
     { name: "Green", hex: "#2ecc71", key: "green", cost: 0 },
+    { name: "Orange", hex: "#ff7700", key: "orange", cost: 100 },
     { name: "Blue", hex: "#3498db", key: "blue", cost: 200 },
     { name: "Purple", hex: "#9b59b6", key: "purple", cost: 200 },
     { name: "Yellow", hex: "#f1c40f", key: "yellow", cost: 200 },
     { name: "Red", hex: "#e74c3c", key: "red", cost: 200 }
+  ],
+  droneColors: [
+    { name: "Match Player", hex: null, key: "match", cost: 0 },
+    { name: "Cyan", hex: "#00f0ff", key: "cyan", cost: 0 },
+    { name: "Orange", hex: "#ff7700", key: "orange", cost: 100 },
+    { name: "Magenta", hex: "#ff00ff", key: "magenta", cost: 150 },
+    { name: "White", hex: "#ffffff", key: "white", cost: 150 }
   ],
   shapes: [
     { name: "Triangle", id: "triangle", cost: 0, color: "#2ecc71" },
@@ -49,7 +57,6 @@ const GALAXTAR_DATA = {
     { name: "Diamond", id: "diamond", cost: 2000, color: "#e74c3c" }
   ],
   modules: [
-    // --- COMMON ($25) ---
     {
       id: "fuel_scavenger",
       name: "Fuel Scavenger",
@@ -95,8 +102,6 @@ const GALAXTAR_DATA = {
       weight: 25,
       desc: "Start the flight with +1 bonus Shield HP."
     },
-
-    // --- RARE ($50) ---
     {
       id: "cryo_thrusters",
       name: "Cryo-Regulator",
@@ -133,8 +138,6 @@ const GALAXTAR_DATA = {
       weight: 15,
       desc: "Destroying enemy ships grants +1 fuel per kill."
     },
-
-    // --- EPIC ($150 - $200) ---
     {
       id: "phoenix_protocol",
       name: "Phoenix Protocol",
