@@ -228,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (overlay) overlay.classList.remove("hidden");
 
-    // Submit score to Firebase if it's not a peaceful run and has distance
     if (!res.isPeaceful && res.distance > 0) {
       submitScore(finalName, res.distance);
     }
@@ -478,7 +477,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Settings Toggles & Reset
+  // Settings Toggles & Reset + Secret Cheat Code Logic
+  let cheatStep = 0;
+
+  function areAllFourOff() {
+    const d = stats.data;
+    return !d.isPeacefulMode && !d.isHardcoreMode && !d.sfxOn && !d.musicOn;
+  }
+
   function updateSettingsDisplay() {
     const d = stats.data;
     setToggleState("set-peaceful", d.isPeacefulMode);
@@ -510,13 +516,13 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.save();
         setToggleState(idPrefix, false);
         if (onChange) onChange(false);
+        cheatStep = 0; // Break cheat combo if anything is turned off
       });
     }
     if (onBtn) {
       onBtn.addEventListener("click", () => {
         stats.data[settingKey] = true;
 
-        // Enforce mutual exclusivity between Peaceful and Hardcore modes
         if (settingKey === "isPeacefulMode") {
           stats.data.isHardcoreMode = false;
           setToggleState("set-hardcore", false);
@@ -528,6 +534,17 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.save();
         setToggleState(idPrefix, true);
         if (onChange) onChange(true);
+
+        // Cheat Combo Tracking for SFX and Music ON
+        if (settingKey === "sfxOn") {
+          if (cheatStep === 2) cheatStep = 3;
+          else cheatStep = 0;
+        } else if (settingKey === "musicOn") {
+          if (cheatStep === 3) cheatStep = 4;
+          else cheatStep = 0;
+        } else {
+          cheatStep = 0;
+        }
       });
     }
   };
@@ -543,10 +560,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetCancelBtn = document.getElementById("btn-reset-cancel");
 
   if (resetPromptBtn) {
-    resetPromptBtn.addEventListener("click", () => resetConfirmBox.classList.remove("hidden"));
+    resetPromptBtn.addEventListener("click", () => {
+      resetConfirmBox.classList.remove("hidden");
+      // Cheat Combo Step 1 or Step 5
+      if (cheatStep === 0 && areAllFourOff()) {
+        cheatStep = 1;
+      } else if (cheatStep === 4) {
+        cheatStep = 5;
+      } else {
+        cheatStep = 0;
+      }
+    });
   }
   if (resetCancelBtn) {
-    resetCancelBtn.addEventListener("click", () => resetConfirmBox.classList.add("hidden"));
+    resetCancelBtn.addEventListener("click", () => {
+      resetConfirmBox.classList.add("hidden");
+      // Cheat Combo Step 2 or Final Trigger (Step 6)
+      if (cheatStep === 1) {
+        cheatStep = 2;
+      } else if (cheatStep === 5) {
+        // SUCCESS: Award 50,000 points!
+        stats.data.totalPoints += 50000;
+        stats.data.lifetimePointsEarned += 50000;
+        stats.save();
+        alert("DEV CHEAT ACTIVATED: +50,000 Points Added!");
+        cheatStep = 0;
+      } else {
+        cheatStep = 0;
+      }
+    });
   }
   if (resetConfirmBtn) {
     resetConfirmBtn.addEventListener("click", () => {
@@ -654,7 +696,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function submitScore(pilotName, distance) {
     try {
-      // Push every valid run immediately to Firebase so scores populate cleanly
       const newScoreRef = dbRef.push();
       await newScoreRef.set({
         name: pilotName,
@@ -679,7 +720,6 @@ document.addEventListener("DOMContentLoaded", () => {
           scores.push(childSnapshot.val());
         });
 
-        // Firebase limitToLast returns ascending order; reverse to show highest distance first
         scores.reverse();
 
         if (scores.length === 0) {
