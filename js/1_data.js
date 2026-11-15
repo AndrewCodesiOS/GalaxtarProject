@@ -49,53 +49,118 @@ const GALAXTAR_DATA = {
     { name: "Diamond", id: "diamond", cost: 2000, color: "#e74c3c" }
   ],
   modules: [
+    /* Commons ($35 pts) */
     {
       id: "fuel_scavenger",
       name: "Fuel Scavenger",
       rarity: "COMMON",
       color: "#2ecc71",
-      weight: 30,
-      desc: "Asteroids restore +40% bonus fuel when destroyed."
+      weight: 20,
+      price: 35,
+      desc: "Asteroids restore +40% bonus fuel when destroyed. (Single-use)"
     },
     {
       id: "bounty_scanner",
       name: "Bounty Scanner",
       rarity: "COMMON",
       color: "#2ecc71",
-      weight: 30,
-      desc: "Earn +25% bonus points from all ships and asteroids."
+      weight: 20,
+      price: 35,
+      desc: "Earn +25% bonus points from all ships and asteroids. (Single-use)"
     },
     {
       id: "reinforced_hull",
       name: "Reinforced Plating",
       rarity: "COMMON",
       color: "#2ecc71",
-      weight: 25,
-      desc: "Start the flight with +2 bonus Shield HP."
+      weight: 18,
+      price: 35,
+      desc: "Start the flight with +2 bonus Shield HP. (Single-use)"
     },
+    {
+      id: "stellar_compass",
+      name: "Stellar Compass",
+      rarity: "COMMON",
+      color: "#2ecc71",
+      weight: 18,
+      price: 35,
+      desc: "Starfield objects pass 20% faster, increasing visual flow. (Single-use)"
+    },
+
+    /* Rares ($75 pts) */
     {
       id: "cryo_thrusters",
       name: "Cryo-Regulator",
       rarity: "RARE",
       color: "#3498db",
-      weight: 18,
-      desc: "Reduces passive fuel burn over distance by 25%."
+      weight: 12,
+      price: 75,
+      desc: "Reduces passive fuel burn over distance by 25%. (Single-use)"
     },
     {
       id: "overclock_core",
       name: "Overclock Core",
       rarity: "RARE",
       color: "#9b59b6",
-      weight: 15,
-      desc: "Increases projectile speed by 25% and adds +1 bullet damage."
+      weight: 10,
+      price: 75,
+      desc: "Increases projectile speed by 25% and adds +1 bullet damage. (Single-use)"
     },
+    {
+      id: "asteroid_deflector",
+      name: "Asteroid Deflector",
+      rarity: "RARE",
+      color: "#3498db",
+      weight: 10,
+      price: 75,
+      desc: "Small asteroids take double damage from all weapons. (Single-use)"
+    },
+    {
+      id: "ion_capacitor",
+      name: "Ion Capacitor",
+      rarity: "RARE",
+      color: "#9b59b6",
+      weight: 10,
+      price: 75,
+      desc: "Increases max fuel capacity by +50 for the run. (Single-use)"
+    },
+
+    /* Epics ($150 pts) */
     {
       id: "phoenix_protocol",
       name: "Phoenix Protocol",
       rarity: "EPIC",
       color: "#f1c40f",
-      weight: 7,
-      desc: "Survive 1 fatal hit with full HP restored and a screen-clearing blast."
+      weight: 6,
+      price: 150,
+      desc: "Survive 1 fatal hit with full HP restored and a screen blast. (Single-use)"
+    },
+    {
+      id: "quantum_accelerator",
+      name: "Quantum Accelerator",
+      rarity: "EPIC",
+      color: "#f1c40f",
+      weight: 5,
+      price: 150,
+      desc: "Double weapon projectile count for the entire flight. (Single-use)"
+    },
+    {
+      id: "void_shield_gen",
+      name: "Void Shield Generator",
+      rarity: "EPIC",
+      color: "#f1c40f",
+      weight: 5,
+      price: 150,
+      desc: "Grants continuous passive shield regeneration every 8s. (Single-use)"
+    },
+    {
+      id: "singularity_core",
+      name: "Singularity Core",
+      rarity: "EPIC",
+      color: "#e74c3c",
+      weight: 4,
+      price: 150,
+      desc: "Defeated enemies trigger a chain reaction explosion. (Single-use)"
     }
   ],
   enemyTypes: {
