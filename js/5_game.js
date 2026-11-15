@@ -68,6 +68,11 @@ class ExploreGameEngine {
     this.isGameOver = false;
     this.isManualEnd = false;
 
+    // Boss State Properties
+    this.isBossActive = false;
+    this.bossDefeatedAt20k = false;
+    this.boss = null;
+
     this.keys = {};
     this.activeTouches = new Map();
     this.shipDragTouchId = null;
@@ -218,6 +223,11 @@ class ExploreGameEngine {
     this.isMouseDown = false;
     this.hasMovedDistance = false;
 
+    // Reset Boss States
+    this.isBossActive = false;
+    this.bossDefeatedAt20k = false;
+    this.boss = null;
+
     for (let i = 0; i < 85; i++) {
       this.stars.push({
         x: Math.random() * this.canvas.width,
@@ -257,7 +267,6 @@ class ExploreGameEngine {
     this.shootingStarTimer = 0;
     this.trailTimer = 0;
 
-    // Time-based fuel and solar recharge accumulators
     this.fuelTimer = 0;
     this.solarTimer = 0;
 
@@ -435,6 +444,47 @@ class ExploreGameEngine {
     }
   }
 
+  triggerMegaBoss() {
+    this.isBossActive = true;
+    this.audio.switchToBossMusic();
+    
+    // Clear regular active enemies/asteroids for a clean arena feel
+    this.enemies = [];
+    this.asteroids = [];
+
+    // Instantiate the First Mega Boss (The Astral Titan)
+    this.boss = {
+      name: "ASTRAL TITAN (MK I)",
+      x: this.canvas.width / 2,
+      y: 120,
+      w: 120,
+      h: 90,
+      maxHp: 150,
+      hp: 150,
+      vx: 120,
+      color: "#ff3366",
+      shape: "octagon",
+      attackTimer: 0,
+      pattern: 0
+    };
+  }
+
+  bossShoot() {
+    if (!this.boss) return;
+    const spd = 260;
+    const angles = [-0.5, -0.25, 0, 0.25, 0.5];
+    angles.forEach(ang => {
+      this.enemyBullets.push({
+        x: this.boss.x + (ang * 60),
+        y: this.boss.y + this.boss.h / 2,
+        vx: ang * 150,
+        vy: spd,
+        size: 10,
+        color: "#ff3366"
+      });
+    });
+  }
+
   spawnExplosion(x, y, color, count = 22) {
     for (let i = 0; i < count; i++) {
       const ang = Math.random() * Math.PI * 2;
@@ -465,17 +515,20 @@ class ExploreGameEngine {
   update(dt) {
     const d = this.stats.data;
     const thrusterInfo = GALAXTAR_DATA.thrusterLevels[d.thrusterLevel - 1];
-    
-    // Passive distance multiplier from thruster upgrade level
     const passiveDistanceMultiplier = thrusterInfo.speedMultiplier;
-
-    // Gameplay and obstacles remain at steady normal speed
     const speedMult = 1.0;
 
     if (!this.isGameOver) {
-      this.elapsedTime += dt;
-      // Distance accumulates faster based on the passive thruster upgrade
-      this.distance += 220 * passiveDistanceMultiplier * dt;
+      // If boss is active, freeze distance accumulation so player fights in arena mode
+      if (!this.isBossActive) {
+        this.elapsedTime += dt;
+        this.distance += 220 * passiveDistanceMultiplier * dt;
+
+        // Check for First Mega Boss trigger at 20,000 meters
+        if (this.distance >= 20000 && !this.bossDefeatedAt20k && !this.isBossActive) {
+          this.triggerMegaBoss();
+        }
+      }
 
       const moveSpeed = 360;
       if (d.currentFuel > 0 || d.isPeacefulMode) {
@@ -505,7 +558,6 @@ class ExploreGameEngine {
       }
 
       if (!d.isPeacefulMode) {
-        // Time-based fuel consumption tick (1 fuel every 1.5s standard, doubled in hardcore)
         this.fuelTimer += dt;
         if (this.fuelTimer >= 2.0) {
           const baseCost = d.isHardcoreMode ? 5 : 3;
@@ -513,7 +565,6 @@ class ExploreGameEngine {
           this.fuelTimer = 0;
         }
 
-        // Time-based solar charging tick (+4 fuel every 12 seconds for Level 5 Solar Reactor)
         if (d.fuelLevel >= 5) {
           this.solarTimer += dt;
           if (this.solarTimer >= 12.0) {
@@ -523,7 +574,7 @@ class ExploreGameEngine {
         }
       }
 
-      if (this.distance >= this.nextDifficultyMilestone) {
+      if (this.distance >= this.nextDifficultyMilestone && !this.isBossActive) {
         this.dynamicSpawnMult += 0.1 + Math.random() * 0.1;
         this.nextDifficultyMilestone = this.distance + 9000 + Math.random() * 7000;
       }
@@ -593,33 +644,49 @@ class ExploreGameEngine {
       return true;
     });
 
-    this.asteroidSpawnTimer += dt * speedMult;
-    if (this.asteroidSpawnTimer >= 3.2) {
-      this.asteroidSpawnTimer = 0;
-      const tier = Math.random();
-      const size = tier < 0.5 ? 28 : tier < 0.85 ? 42 : 58;
-      const hp = size === 28 ? 2 : size === 42 ? 4 : 6;
-      const fuelReward = size === 28 ? 2 : size === 42 ? 4 : 6;
-      const pointReward = size === 28 ? 2 : size === 42 ? 5 : 10;
-      this.asteroids.push({
-        x: 30 + Math.random() * (this.canvas.width - 60),
-        y: -40,
-        size,
-        hp,
-        fuelReward,
-        pointReward,
-        speed: 110 + Math.random() * 60,
-        rot: 0,
-        rotSpeed: (Math.random() - 0.5) * 2.5,
-        color: "#8d6e63"
-      });
+    // Pause regular asteroid/enemy spawns while the Boss is active
+    if (!this.isBossActive) {
+      this.asteroidSpawnTimer += dt * speedMult;
+      if (this.asteroidSpawnTimer >= 3.2) {
+        this.asteroidSpawnTimer = 0;
+        const tier = Math.random();
+        const size = tier < 0.5 ? 28 : tier < 0.85 ? 42 : 58;
+        const hp = size === 28 ? 2 : size === 42 ? 4 : 6;
+        const fuelReward = size === 28 ? 2 : size === 42 ? 4 : 6;
+        const pointReward = size === 28 ? 2 : size === 42 ? 5 : 10;
+        this.asteroids.push({
+          x: 30 + Math.random() * (this.canvas.width - 60),
+          y: -40,
+          size,
+          hp,
+          fuelReward,
+          pointReward,
+          speed: 110 + Math.random() * 60,
+          rot: 0,
+          rotSpeed: (Math.random() - 0.5) * 2.5,
+          color: "#8d6e63"
+        });
+      }
+
+      const spawnMult = (d.isHardcoreMode ? 4.0 : 1.0) * this.dynamicSpawnMult;
+      this.enemySpawnTimer += dt;
+      if (this.enemySpawnTimer >= 4.0 / spawnMult) {
+        this.enemySpawnTimer = 0;
+        this.spawnEnemy();
+      }
     }
 
-    const spawnMult = (d.isHardcoreMode ? 4.0 : 1.0) * this.dynamicSpawnMult;
-    this.enemySpawnTimer += dt;
-    if (this.enemySpawnTimer >= 4.0 / spawnMult) {
-      this.enemySpawnTimer = 0;
-      this.spawnEnemy();
+    // Boss AI Loop
+    if (this.isBossActive && this.boss) {
+      this.boss.x += this.boss.vx * dt;
+      if (this.boss.x < 80 || this.boss.x > this.canvas.width - 80) {
+        this.boss.vx *= -1;
+      }
+      this.boss.attackTimer += dt;
+      if (this.boss.attackTimer >= 1.2) {
+        this.boss.attackTimer = 0;
+        this.bossShoot();
+      }
     }
 
     const enemySpeedMult = 1.0;
@@ -717,6 +784,55 @@ class ExploreGameEngine {
     const d = this.stats.data;
     const hitBox = (ax, ay, aw, ah, bx, by, bw, bh) =>
       Math.abs(ax - bx) * 2 < aw + bw && Math.abs(ay - by) * 2 < ah + bh;
+
+    // Boss Bullet Collisions
+    if (this.isBossActive && this.boss) {
+      for (let i = this.bullets.length - 1; i >= 0; i--) {
+        const b = this.bullets[i];
+        if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
+          this.boss.hp -= b.damage;
+          this.spawnExplosion(b.x, b.y, "#ff3366", 6);
+          this.bullets.splice(i, 1);
+
+          if (this.boss.hp <= 0) {
+            this.audio.playExplosion(false);
+            this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 50);
+            this.sessionPoints += 50; // Big bonus points for defeating the boss
+            this.sessionShips++;
+            this.boss = null;
+            this.isBossActive = false;
+            this.bossDefeatedAt20k = true;
+            this.audio.switchToNormalMusic();
+          }
+          break;
+        }
+      }
+
+      for (let i = this.chargeBullets.length - 1; i >= 0; i--) {
+        const b = this.chargeBullets[i];
+        if (hitBox(b.x, b.y, b.size, b.size, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
+          this.boss.hp -= b.damage;
+          this.chargeBullets.splice(i, 1);
+
+          if (this.boss.hp <= 0) {
+            this.audio.playExplosion(false);
+            this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 50);
+            this.sessionPoints += 50;
+            this.sessionShips++;
+            this.boss = null;
+            this.isBossActive = false;
+            this.bossDefeatedAt20k = true;
+            this.audio.switchToNormalMusic();
+          }
+          break;
+        }
+      }
+
+      // Boss collision with player
+      if (hitBox(this.boss?.x || 0, this.boss?.y || 0, this.boss?.w || 0, this.boss?.h || 0, this.ship.x, this.ship.y, this.ship.w, this.ship.h)) {
+        this.damagePlayer(999);
+      }
+    }
 
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
@@ -845,6 +961,7 @@ class ExploreGameEngine {
     this.isInvulnerable = true;
     this.invulnTimer = 0.5;
     if (this.ship.hp <= 0) {
+      this.audio.switchToNormalMusic();
       this.triggerGameOver(false);
     }
   }
@@ -853,6 +970,7 @@ class ExploreGameEngine {
     if (this.isGameOver) return;
     this.isGameOver = true;
     this.isManualEnd = manualEnd;
+    this.audio.switchToNormalMusic();
     if (!manualEnd) {
       this.audio.playExplosion(false);
       this.spawnExplosion(this.ship.x, this.ship.y, this.stats.data.selectedShipColor, 34);
@@ -1060,6 +1178,11 @@ class ExploreGameEngine {
       this.drawPolygon(e.shape, e.x, e.y, e.w, e.h, e.color, true);
     }
 
+    // Render Mega Boss if active
+    if (this.isBossActive && this.boss) {
+      this.drawPolygon(this.boss.shape, this.boss.x, this.boss.y, this.boss.w, this.boss.h, this.boss.color, true);
+    }
+
     if (!this.isGameOver || this.isManualEnd) {
       this.drawPolygon(
         this.stats.data.selectedShipShape,
@@ -1091,6 +1214,34 @@ class ExploreGameEngine {
     ctx.shadowBlur = 8;
     ctx.fillText(`DIST: ${Math.floor(this.distance)} m`, 75, 50);
     ctx.restore();
+
+    // Render Visible Boss Health Bar at Top Center if Boss is Active
+    if (this.isBossActive && this.boss) {
+      const bossBarW = Math.min(300, this.canvas.width * 0.6);
+      const bossBarH = 18;
+      const bossBarX = (this.canvas.width - bossBarW) / 2;
+      const bossBarY = 25;
+      const bossHpPercent = Math.max(0, Math.min(1, this.boss.hp / this.boss.maxHp));
+
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.strokeStyle = "#ff3366";
+      ctx.lineWidth = 2;
+      ctx.shadowColor = "#ff3366";
+      ctx.shadowBlur = 10;
+      ctx.fillRect(bossBarX, bossBarY, bossBarW, bossBarH);
+      ctx.strokeRect(bossBarX, bossBarY, bossBarW, bossBarH);
+
+      ctx.fillStyle = "#ff3366";
+      ctx.fillRect(bossBarX + 2, bossBarY + 2, (bossBarW - 4) * bossHpPercent, bossBarH - 4);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px monospace";
+      ctx.textAlign = "center";
+      ctx.shadowBlur = 4;
+      ctx.fillText(`${this.boss.name}`, this.canvas.width / 2, bossBarY + 13);
+      ctx.restore();
+    }
 
     // Draw live shield health on bottom left (with text inside)
     const currentHp = Math.max(0, this.ship.hp);
