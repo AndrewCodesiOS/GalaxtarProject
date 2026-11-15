@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = document.getElementById(viewId);
     if (target) {
       target.classList.add("active");
-      if (viewId === "view-menu") updateFuelWidget(); // Automatically updates the fuel ring whenever menu is shown
+      if (viewId === "view-menu") updateFuelWidget();
       if (viewId === "view-profile") updateProfileDisplay();
       if (viewId === "view-upgrades") updateUpgradesDisplay();
       if (viewId === "view-settings") updateSettingsDisplay();
@@ -197,11 +197,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // End Flight from Pause Menu now triggers game over overlay sequence properly
   const btnEndFlight = document.getElementById("btn-end-flight");
   if (btnEndFlight) {
     btnEndFlight.addEventListener("click", () => {
       gameEngine.triggerGameOver(true);
-      showView("view-menu");
     });
   }
 
