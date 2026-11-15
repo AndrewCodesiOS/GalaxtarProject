@@ -141,6 +141,82 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Pre-Flight Module Loadout Modal Logic
+  const loadoutModal = document.getElementById("loadout-modal");
+  const loadoutList = document.getElementById("loadout-list");
+  const loadoutCount = document.getElementById("loadout-count");
+  const btnCancelLoadout = document.getElementById("btn-cancel-loadout");
+  const btnConfirmLaunch = document.getElementById("btn-confirm-launch");
+  let selectedLoadoutModules = [];
+
+  function openLoadoutModal() {
+    selectedLoadoutModules = [];
+    renderLoadoutList();
+    if (loadoutModal) loadoutModal.classList.remove("hidden");
+  }
+
+  function renderLoadoutList() {
+    if (!loadoutList) return;
+    if (loadoutCount) loadoutCount.innerText = `${selectedLoadoutModules.length}/3`;
+
+    const inv = stats.data.moduleInventory || {};
+    const ownedModules = GALAXTAR_DATA.modules.filter(m => (inv[m.id] || 0) > 0);
+
+    if (ownedModules.length === 0) {
+      loadoutList.innerHTML = `<p style="text-align: center; color: #777; padding: 18px; font-size: 0.85rem;">No modules in hangar.<br>Reach 10,000m in a flight to recover RNG modules!</p>`;
+      return;
+    }
+
+    loadoutList.innerHTML = ownedModules.map(mod => {
+      const count = inv[mod.id] || 0;
+      const isSelected = selectedLoadoutModules.includes(mod.id);
+      const isFull = selectedLoadoutModules.length >= 3 && !isSelected;
+
+      return `
+        <div class="module-card ${isSelected ? "selected" : ""} ${isFull ? "disabled" : ""}" data-mod-id="${mod.id}">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+              <span style="font-size: 0.65rem; font-weight: bold; color: ${mod.color};">${mod.rarity}</span>
+              <strong style="font-size: 0.9rem; color: #fff;">${mod.name}</strong>
+            </div>
+            <p style="font-size: 0.78rem; color: #aaa; line-height: 1.3;">${mod.desc}</p>
+          </div>
+          <span class="module-badge">x${count}</span>
+        </div>
+      `;
+    }).join("");
+
+    loadoutList.querySelectorAll(".module-card").forEach(card => {
+      card.addEventListener("click", () => {
+        const modId = card.getAttribute("data-mod-id");
+        if (selectedLoadoutModules.includes(modId)) {
+          selectedLoadoutModules = selectedLoadoutModules.filter(id => id !== modId);
+        } else if (selectedLoadoutModules.length < 3) {
+          selectedLoadoutModules.push(modId);
+        }
+        renderLoadoutList();
+      });
+    });
+  }
+
+  if (btnCancelLoadout) {
+    btnCancelLoadout.addEventListener("click", () => {
+      if (loadoutModal) loadoutModal.classList.add("hidden");
+    });
+  }
+
+  if (btnConfirmLaunch) {
+    btnConfirmLaunch.addEventListener("click", () => {
+      if (loadoutModal) loadoutModal.classList.add("hidden");
+      if (!stats.data.isPeacefulMode && selectedLoadoutModules.length > 0) {
+        stats.consumeModules(selectedLoadoutModules);
+      }
+      const modulesToActivate = stats.data.isPeacefulMode ? [] : [...selectedLoadoutModules];
+      showView("view-explore");
+      gameEngine.startSession(modulesToActivate);
+    });
+  }
+
   // Menu Buttons
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
@@ -149,8 +225,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (introModal) introModal.classList.remove("hidden");
         return;
       }
-      showView("view-explore");
-      gameEngine.startSession();
+      if (stats.data.isPeacefulMode) {
+        showView("view-explore");
+        gameEngine.startSession([]);
+      } else {
+        openLoadoutModal();
+      }
     });
   }
 
@@ -218,10 +298,51 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let lastRunResult = null;
+  const moduleRewardModal = document.getElementById("module-reward-modal");
+  const btnClaimModule = document.getElementById("btn-claim-module");
+
+  function rollRandomModule() {
+    const pool = GALAXTAR_DATA.modules;
+    const totalWeight = pool.reduce((sum, m) => sum + m.weight, 0);
+    let roll = Math.random() * totalWeight;
+    for (const mod of pool) {
+      if (roll < mod.weight) return mod;
+      roll -= mod.weight;
+    }
+    return pool[0];
+  }
+
+  if (btnClaimModule) {
+    btnClaimModule.addEventListener("click", () => {
+      if (moduleRewardModal) moduleRewardModal.classList.add("hidden");
+      showView("view-menu");
+    });
+  }
+
   const btnContinue = document.getElementById("btn-continue");
   if (btnContinue) {
     btnContinue.addEventListener("click", () => {
       document.getElementById("gameover-overlay").classList.add("hidden");
+      if (lastRunResult && !lastRunResult.isPeaceful && lastRunResult.distance >= 10000) {
+        const awarded = rollRandomModule();
+        stats.addModule(awarded.id, 1);
+
+        const rarityEl = document.getElementById("reward-mod-rarity");
+        const nameEl = document.getElementById("reward-mod-name");
+        const descEl = document.getElementById("reward-mod-desc");
+        if (rarityEl) {
+          rarityEl.innerText = awarded.rarity;
+          rarityEl.style.color = awarded.color;
+        }
+        if (nameEl) nameEl.innerText = awarded.name;
+        if (descEl) descEl.innerText = awarded.desc;
+
+        if (moduleRewardModal) {
+          moduleRewardModal.classList.remove("hidden");
+          return;
+        }
+      }
       showView("view-menu");
     });
   }
@@ -236,6 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showGameOver(res) {
+    lastRunResult = res;
     const overlay = document.getElementById("gameover-overlay");
     const grid = document.getElementById("gameover-grid");
     
