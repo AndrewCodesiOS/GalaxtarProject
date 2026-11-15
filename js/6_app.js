@@ -116,8 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Immediately update the fuel widget circle on startup/load
+  // Ensure the fuel widget renders immediately and recalculates after layout paint
   updateFuelWidget();
+  setTimeout(updateFuelWidget, 50);
 
   // Menu Buttons
   const btnLaunch = document.getElementById("btn-launch");
