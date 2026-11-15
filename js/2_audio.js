@@ -9,10 +9,16 @@ class AudioController {
     this.bgMusic.loop = true;
     this.bgMusic.volume = 0.5;
 
+    // Boss music track (falls back gracefully if not present, or uses main theme adjusted)
+    this.bossMusic = new Audio("galaxtartheme.m4a");
+    this.bossMusic.loop = true;
+    this.bossMusic.volume = 0.6;
+
     // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         this.bgMusic.pause();
+        this.bossMusic.pause();
       } else {
         if (this.musicEnabled) {
           this.bgMusic.play().catch(e => console.log("Music resume error:", e));
@@ -25,11 +31,10 @@ class AudioController {
     if (!this.audioCtx) {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    // Automatically resume if browser suspended the context due to idling or focus shifts
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && this.bgMusic.paused) {
+    if (this.musicEnabled && this.bgMusic.paused && this.bossMusic.paused) {
       this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
   }
@@ -40,7 +45,21 @@ class AudioController {
       this.bgMusic.play().catch(e => console.log("Music play error:", e));
     } else {
       this.bgMusic.pause();
+      this.bossMusic.pause();
     }
+  }
+
+  switchToBossMusic() {
+    if (!this.musicEnabled) return;
+    this.bgMusic.pause();
+    this.bossMusic.currentTime = 0;
+    this.bossMusic.play().catch(e => console.log("Boss music play error:", e));
+  }
+
+  switchToNormalMusic() {
+    if (!this.musicEnabled) return;
+    this.bossMusic.pause();
+    this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
   }
 
   playGunSound() {
