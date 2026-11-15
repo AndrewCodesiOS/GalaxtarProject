@@ -8,6 +8,7 @@ class StatsStore {
       weaponLevel: 1,
       thrusterLevel: 1,
       selectedShipColor: "#2ecc71",
+      selectedDroneColor: null, // null defaults to matching player ship color
       selectedShipShape: "triangle",
       totalPoints: 250,
       lifetimePointsEarned: 500,
