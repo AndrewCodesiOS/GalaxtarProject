@@ -750,16 +750,18 @@ class ExploreGameEngine {
         this.elapsedTime += dt;
         this.distance += 220 * passiveDistanceMultiplier * dt;
 
-        if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
-          this.triggerMegaBoss(40000);
-        } else if (this.distance >= 80000 && !this.bossDefeatedAt80k && !this.isBossActive) {
-          this.triggerMegaBoss(80000);
-        } else if (this.distance >= 120000 && !this.bossDefeatedAt120k && !this.isBossActive) {
-          this.triggerMegaBoss(120000);
-        } else if (this.distance >= 160000 && !this.bossDefeatedAt160k && !this.isBossActive) {
-          this.triggerMegaBoss(160000);
-        } else if (this.distance >= 200000 && !this.bossDefeatedAt200k && !this.isBossActive) {
-          this.triggerMegaBoss(200000);
+        if (!d.isPeacefulMode) {
+          if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
+            this.triggerMegaBoss(40000);
+          } else if (this.distance >= 80000 && !this.bossDefeatedAt80k && !this.isBossActive) {
+            this.triggerMegaBoss(80000);
+          } else if (this.distance >= 120000 && !this.bossDefeatedAt120k && !this.isBossActive) {
+            this.triggerMegaBoss(120000);
+          } else if (this.distance >= 160000 && !this.bossDefeatedAt160k && !this.isBossActive) {
+            this.triggerMegaBoss(160000);
+          } else if (this.distance >= 200000 && !this.bossDefeatedAt200k && !this.isBossActive) {
+            this.triggerMegaBoss(200000);
+          }
         }
       }
 
