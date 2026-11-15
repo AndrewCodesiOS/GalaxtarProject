@@ -480,11 +480,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Settings Toggles & Reset + Secret Cheat Code Logic
   let cheatStep = 0;
 
-  function areAllFourOff() {
-    const d = stats.data;
-    return !d.isPeacefulMode && !d.isHardcoreMode && !d.sfxOn && !d.musicOn;
-  }
-
   function updateSettingsDisplay() {
     const d = stats.data;
     setToggleState("set-peaceful", d.isPeacefulMode);
@@ -516,13 +511,11 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.save();
         setToggleState(idPrefix, false);
         if (onChange) onChange(false);
-        cheatStep = 0; // Break cheat combo if anything is turned off
       });
     }
     if (onBtn) {
       onBtn.addEventListener("click", () => {
         stats.data[settingKey] = true;
-
         if (settingKey === "isPeacefulMode") {
           stats.data.isHardcoreMode = false;
           setToggleState("set-hardcore", false);
@@ -530,19 +523,20 @@ document.addEventListener("DOMContentLoaded", () => {
           stats.data.isPeacefulMode = false;
           setToggleState("set-peaceful", false);
         }
-
         stats.save();
         setToggleState(idPrefix, true);
         if (onChange) onChange(true);
 
-        // Cheat Combo Tracking for SFX and Music ON
-        if (settingKey === "sfxOn") {
-          if (cheatStep === 2) cheatStep = 3;
-          else cheatStep = 0;
-        } else if (settingKey === "musicOn") {
-          if (cheatStep === 3) cheatStep = 4;
-          else cheatStep = 0;
-        } else {
+        // Cheat Sequence Progress:
+        // After Step 3 (Cancel), turning SFX ON advances to Step 4
+        if (settingKey === "sfxOn" && cheatStep === 3) {
+          cheatStep = 4;
+        } 
+        // After Step 4, turning Music ON advances to Step 5
+        else if (settingKey === "musicOn" && cheatStep === 4) {
+          cheatStep = 5;
+        } else if (cheatStep < 3) {
+          // If toggled out of order early on, reset
           cheatStep = 0;
         }
       });
@@ -562,24 +556,34 @@ document.addEventListener("DOMContentLoaded", () => {
   if (resetPromptBtn) {
     resetPromptBtn.addEventListener("click", () => {
       resetConfirmBox.classList.remove("hidden");
-      // Cheat Combo Step 1 or Step 5
-      if (cheatStep === 0 && areAllFourOff()) {
+      
+      const d = stats.data;
+      const allOff = !d.isPeacefulMode && !d.isHardcoreMode && !d.sfxOn && !d.musicOn;
+
+      // Step 0: If all four are off and we hit reset prompt -> Step 1
+      if (cheatStep === 0 && allOff) {
         cheatStep = 1;
-      } else if (cheatStep === 4) {
-        cheatStep = 5;
+      } 
+      // Step 5: If we hit reset prompt again after turning SFX and Music on -> Step 6
+      else if (cheatStep === 5) {
+        cheatStep = 6;
       } else {
         cheatStep = 0;
       }
     });
   }
+
   if (resetCancelBtn) {
     resetCancelBtn.addEventListener("click", () => {
       resetConfirmBox.classList.add("hidden");
-      // Cheat Combo Step 2 or Final Trigger (Step 6)
+
+      // Step 1: If we hit cancel -> Step 2 (waiting for SFX on)
       if (cheatStep === 1) {
-        cheatStep = 2;
-      } else if (cheatStep === 5) {
-        // SUCCESS: Award 50,000 points!
+        cheatStep = 2; // (we can also accept SFX on immediately at step 2 or 3)
+        cheatStep = 3; // Ready for SFX & Music
+      } 
+      // Step 6: If we hit cancel on the second prompt -> SUCCESS!
+      else if (cheatStep === 6) {
         stats.data.totalPoints += 50000;
         stats.data.lifetimePointsEarned += 50000;
         stats.save();
@@ -590,6 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
   if (resetConfirmBtn) {
     resetConfirmBtn.addEventListener("click", () => {
       localStorage.clear();
