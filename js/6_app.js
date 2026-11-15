@@ -15,6 +15,18 @@ document.addEventListener("DOMContentLoaded", () => {
   audio.musicEnabled = stats.data.musicOn;
   audio.sfxEnabled = stats.data.sfxOn;
 
+  // Unlock and start background music on the very first user interaction anywhere on the screen
+  const unlockAudioOnFirstInteraction = () => {
+    audio.init();
+    if (stats.data.musicOn) {
+      audio.bgMusic.play().catch(e => console.log("Initial music play blocked:", e));
+    }
+    window.removeEventListener("pointerdown", unlockAudioOnFirstInteraction);
+    window.removeEventListener("keydown", unlockAudioOnFirstInteraction);
+  };
+  window.addEventListener("pointerdown", unlockAudioOnFirstInteraction);
+  window.addEventListener("keydown", unlockAudioOnFirstInteraction);
+
   const bgCanvas = document.getElementById("bg-canvas");
   if (bgCanvas) new StarfieldBackground(bgCanvas);
 
