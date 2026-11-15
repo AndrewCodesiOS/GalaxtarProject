@@ -814,11 +814,10 @@ class ExploreGameEngine {
       }
     }
 
-    // Boss AI Loop & Strict Boundary Clamp
+    // Boss AI Loop & Strict Boundary Clamp (Applies to ALL bosses including 20k Titan)
     if (this.isBossActive && this.boss) {
       this.boss.x += this.boss.vx * dt;
       
-      // Strict screen containment clamp to prevent bosses from flying off-screen
       const margin = 80;
       if (this.boss.x < margin) {
         this.boss.x = margin;
@@ -1101,7 +1100,6 @@ class ExploreGameEngine {
     if (!this.boss) return;
     const tier = this.boss.tier;
     
-    // Play explosion and visual particle burst safely
     this.audio.playExplosion(false);
     this.spawnExplosion(this.boss.x, this.boss.y, this.boss.color, 60);
 
@@ -1109,20 +1107,17 @@ class ExploreGameEngine {
     this.sessionPoints += rewards[tier] || 50;
     this.sessionShips++;
 
-    // Mark milestone defeated flags
     if (tier === 20000) this.bossDefeatedAt20k = true;
     if (tier === 40000) this.bossDefeatedAt40k = true;
     if (tier === 60000) this.bossDefeatedAt60k = true;
     if (tier === 80000) this.bossDefeatedAt80k = true;
     if (tier === 100000) this.bossDefeatedAt100k = true;
 
-    // Reset boss handles cleanly before swapping music back
     this.boss = null;
     this.isBossActive = false;
     this.solarFirewalls = [];
-    this.enemyBullets = []; // Clear lingering boss projectiles so player isn't unfairly hit
+    this.enemyBullets = [];
 
-    // Smooth return to regular gameplay music
     this.audio.switchToNormalMusic();
   }
 
