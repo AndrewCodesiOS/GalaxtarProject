@@ -142,7 +142,7 @@ const GALAXTAR_DATA = {
       color: "#f1c40f",
       price: 150,
       weight: 7,
-      desc: "Survive 1 fatal hit with full HP restored."
+      desc: "Survive 1 fatal hit with full HP restored and sends a blast that destroys nearby enemies."
     },
    {
       id: "overclock_core",
