@@ -53,8 +53,9 @@ class StatsStore {
     this.save();
   }
   addSolarFuel() {
+    if (this.data.fuelLevel < 5) return; // Only apply if Level 5 Solar Reactor is owned
     const m = this.maxFuel();
-    this.data.currentFuel = Math.min(m, this.data.currentFuel + 15);
+    this.data.currentFuel = Math.min(m, this.data.currentFuel + 4);
     this.save();
   }
 }
