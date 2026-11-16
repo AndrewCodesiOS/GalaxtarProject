@@ -534,7 +534,6 @@ class ExploreGameEngine {
         flameAngle: -0.8
       };
     } else if (tier === 160000) {
-      // Hydra-9 Carrier Rework: 3 total waves of 3 smaller ships (9 total minions) + Toned-Down Pulse
       this.boss = {
         tier: 160000,
         name: "QUANTUM SWARM MATRIX 'HYDRA-9'",
@@ -624,7 +623,6 @@ class ExploreGameEngine {
         });
       }
     } else if (this.boss.tier === 160000) {
-      // Hydra-9 Toned-Down Twin Pulse Attack
       [-40, 40].forEach(offsetX => {
         this.enemyBullets.push({
           x: this.boss.x + offsetX,
@@ -678,7 +676,6 @@ class ExploreGameEngine {
 
   spawnHydraWave3x3() {
     if (!this.boss) return;
-    // Spread them out more left-to-right underneath the Hydra body with horizontal oscillation
     const hoverOffsets = [
       { ox: -100, oy: 25 },
       { ox: 0, oy: 35 },
@@ -775,7 +772,6 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone smooth player-relative floating behavior & expanded-range target-seeking laser firing
       if (this.hasAiDrone && this.drone) {
         const targetX = this.ship.x + 45;
         const targetY = this.ship.y + 15;
@@ -876,7 +872,7 @@ class ExploreGameEngine {
           this.dynamicSpawnMult += 0.1 + Math.random() * 0.1;
           this.nextDifficultyMilestone = this.distance + 9000 + Math.random() * 7000;
         } else {
-          this.dynamicSpawnMult = Math.max(this.dynamicSpawnMult, 2.5); // capped peak intensity
+          this.dynamicSpawnMult = Math.max(this.dynamicSpawnMult, 2.5);
         }
       }
 
@@ -994,7 +990,6 @@ class ExploreGameEngine {
 
       this.boss.x += this.boss.vx * dt;
 
-      // Update rotation angle for Astral Titan
       if (this.boss.tier === 40000) {
         this.boss.rotationAngle = (this.boss.rotationAngle || 0) + 1.2 * dt;
       }
@@ -1019,7 +1014,6 @@ class ExploreGameEngine {
         }
       }
 
-      // Hydra-9 Continuous Swarm Matrix: respawn 3 minions whenever active minion count drops to 0
       if (this.boss.tier === 160000) {
         const activeMinions = this.enemies.filter(e => e.isHydraMinion).length;
         if (activeMinions === 0) {
@@ -1045,7 +1039,6 @@ class ExploreGameEngine {
     this.enemies = this.enemies.filter(e => {
       if (e.isHydraMinion) {
         if (this.isBossActive && this.boss) {
-          // Patrol left to right underneath the boss body using cosine wave for smooth lateral movement
           const lateralSway = Math.cos(performance.now() * 0.003 + e.minionIndex * 2.0) * 55;
           const bob = Math.sin(performance.now() * 0.005 + e.minionIndex) * 6;
           e.x = this.boss.x + e.offsetX + lateralSway;
@@ -1381,9 +1374,10 @@ class ExploreGameEngine {
       if (consumed) this.chargeBullets.splice(i, 1);
     }
 
+    // Integrated Fix for Enemy Bullet Collisions
     for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
       const eb = this.enemyBullets[i];
-      if (hitBox(eb.x, eb.y, eb.size, eb.size, this.ship.x, this.ship.y, this.ship.w * 0.8, this.ship.h * 0.8)) {
+      if (!this.isGameOver && hitBox(eb.x, eb.y, eb.size, eb.size, this.ship.x, this.ship.y, this.ship.w * 0.8, this.ship.h * 0.8)) {
         this.enemyBullets.splice(i, 1);
         if (!this.isInvulnerable) {
           this.damagePlayer(1);
