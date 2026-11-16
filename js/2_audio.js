@@ -4,12 +4,12 @@ class AudioController {
     this.musicEnabled = true;
     this.sfxEnabled = true;
     
-    // Buffer for the loaded m4a audio file
+    // Buffer for the loaded m4a audio file (bypasses OS media player hooks)
     this.musicBuffer = null;
     this.musicSource = null;
     this.musicGain = null;
 
-    // Load the m4a file into memory as an audio buffer (bypasses OS media player hooks)
+    // Load the m4a file into memory
     this.loadMusicFile();
 
     // Procedural Boss Beat State
@@ -33,11 +33,10 @@ class AudioController {
     try {
       const response = await fetch("galaxtartheme.m4a");
       const arrayBuffer = await response.arrayBuffer();
-      // We'll initialize audioCtx on first user gesture, but we can decode right away or after init
       const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
       this.musicBuffer = await tempCtx.decodeAudioData(arrayBuffer);
     } catch (e) {
-      console.log("Could not load m4a music buffer, falling back to synth if needed:", e);
+      console.log("Music buffer load warning:", e);
     }
   }
 
@@ -68,6 +67,9 @@ class AudioController {
     if (!this.audioCtx || !this.musicBuffer || this.musicSource || this.isBossMusicPlaying) return;
 
     try {
+      if (this.audioCtx.state === "suspended") {
+        this.audioCtx.resume();
+      }
       this.musicSource = this.audioCtx.createBufferSource();
       this.musicSource.buffer = this.musicBuffer;
       this.musicSource.loop = true;
