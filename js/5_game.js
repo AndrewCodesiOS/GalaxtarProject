@@ -741,7 +741,7 @@ class ExploreGameEngine {
     const d = this.stats.data;
     const thrusterInfo = GALAXTAR_DATA.thrusterLevels[d.thrusterLevel - 1];
     
-    const overdriveMult = (this.activeModules && this.activeModules.has("overdrive_thrusters")) ? 1.1 : 1.0;
+    const overdriveMult = (this.activeModules && this.activeModules.has("overdrive_thrusters")) ? 1.2 : 1.0;
     const passiveDistanceMultiplier = thrusterInfo.speedMultiplier * overdriveMult;
     const speedMult = 1.0;
 
@@ -858,7 +858,7 @@ class ExploreGameEngine {
         if (this.fuelTimer >= 2.0) {
           let baseCost = d.isHardcoreMode ? 5 : 3;
           if (this.activeModules && this.activeModules.has("cryo_thrusters")) {
-            baseCost *= 0.75;
+            baseCost *= 0.5;
           }
           this.stats.consumeFuel(baseCost);
           this.fuelTimer = 0;
@@ -1304,7 +1304,7 @@ class ExploreGameEngine {
             }
             
             if (this.activeModules && this.activeModules.has("fuel_extractor")) {
-              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 2);
             }
 
             this.audio.playExplosion(false);
@@ -1352,7 +1352,7 @@ class ExploreGameEngine {
               this.sessionPoints += getCalculatedPoints(pts);
             }
             if (this.activeModules && this.activeModules.has("fuel_extractor")) {
-              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 2);
             }
             this.audio.playExplosion(false);
             this.spawnExplosion(e.x, e.y, e.color, 24);
@@ -1395,7 +1395,7 @@ class ExploreGameEngine {
               this.sessionPoints += getCalculatedPoints(pts);
             }
             if (this.activeModules && this.activeModules.has("fuel_extractor")) {
-              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 1);
+              d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + 2);
             }
             this.audio.playExplosion(false);
             this.spawnExplosion(e.x, e.y, e.color, 26);
@@ -1486,7 +1486,7 @@ class ExploreGameEngine {
   destroyAsteroid(index, getCalculatedPoints) {
     const a = this.asteroids[index];
     const d = this.stats.data;
-    const fuelMult = (this.activeModules && this.activeModules.has("fuel_scavenger")) ? 1.4 : 1;
+    const fuelMult = (this.activeModules && this.activeModules.has("fuel_scavenger")) ? 1.75 : 1;
 
     d.currentFuel = Math.min(this.stats.maxFuel(), d.currentFuel + Math.ceil(a.fuelReward * fuelMult));
     if (!d.isPeacefulMode) {
