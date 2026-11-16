@@ -64,7 +64,7 @@ const GALAXTAR_DATA = {
       color: "#2ecc71",
       price: 25,
       weight: 30,
-      desc: "Asteroids restore +40% bonus fuel when destroyed."
+      desc: "Asteroids restore +75% bonus fuel when destroyed."
     },
     {
       id: "bounty_scanner",
@@ -91,7 +91,7 @@ const GALAXTAR_DATA = {
       color: "#2ecc71",
       price: 25,
       weight: 25,
-      desc: "Grants a +10% movement speed boost."
+      desc: "Grants a +20% movement speed boost."
     },
     {
       id: "auxiliary_plating",
@@ -109,7 +109,7 @@ const GALAXTAR_DATA = {
       color: "#3498db",
       price: 50,
       weight: 18,
-      desc: "Reduces passive fuel burn over distance by 25%."
+      desc: "Reduces passive fuel burn over distance by 50%."
     },
     {
       id: "yield_amplifier",
@@ -136,7 +136,7 @@ const GALAXTAR_DATA = {
       color: "#3498db",
       price: 50,
       weight: 15,
-      desc: "Destroying enemy ships grants +1 fuel per kill."
+      desc: "Destroying enemy ships grants +2 fuel per kill."
     },
     {
       id: "phoenix_protocol",
