@@ -787,7 +787,7 @@ class ExploreGameEngine {
           this.drone.fireTimer = 0;
 
           let target = null;
-          let closestDist = 700;
+          let closestDist = 600;
 
           if (this.isBossActive && this.boss) {
             const dist = Math.hypot(this.boss.x - this.drone.x, this.boss.y - this.drone.y);
