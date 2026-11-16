@@ -775,7 +775,7 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone smooth player-relative floating behavior & expanded-range target-seeking laser firing
+      // AI Drone smooth player-relative floating behavior & expanded-range heat-seeking laser firing
       if (this.hasAiDrone && this.drone) {
         const targetX = this.ship.x + 45;
         const targetY = this.ship.y + 15;
@@ -787,7 +787,7 @@ class ExploreGameEngine {
           this.drone.fireTimer = 0;
 
           let target = null;
-          let closestDist = 700;
+          let closestDist = 800;
 
           if (this.isBossActive && this.boss) {
             const dist = Math.hypot(this.boss.x - this.drone.x, this.boss.y - this.drone.y);
@@ -799,38 +799,36 @@ class ExploreGameEngine {
 
           if (!target) {
             for (const e of this.enemies) {
-              if (e.y < this.drone.y + 300) {
-                const dist = Math.hypot(e.x - this.drone.x, e.y - this.drone.y);
-                if (dist < closestDist) {
-                  closestDist = dist;
-                  target = e;
-                }
+              const dist = Math.hypot(e.x - this.drone.x, e.y - this.drone.y);
+              if (dist < closestDist) {
+                closestDist = dist;
+                target = e;
               }
             }
           }
 
           if (!target) {
             for (const a of this.asteroids) {
-              if (a.y < this.drone.y + 300) {
-                const dist = Math.hypot(a.x - this.drone.x, a.y - this.drone.y);
-                if (dist < closestDist) {
-                  closestDist = dist;
-                  target = a;
-                }
+              const dist = Math.hypot(a.x - this.drone.x, a.y - this.drone.y);
+              if (dist < closestDist) {
+                closestDist = dist;
+                target = a;
               }
             }
           }
 
-          if (target) {
-            this.droneBeams.push({
-              x: this.drone.x,
-              y: this.drone.y - 12,
-              length: 22,
-              speed: 380,
-              color: d.selectedDroneColor || d.selectedShipColor,
-              damage: 0.5
-            });
-          }
+          const dColor = d.selectedDroneColor || d.selectedShipColor;
+          this.droneBeams.push({
+            x: this.drone.x,
+            y: this.drone.y - 12,
+            vx: 0,
+            vy: -500,
+            speed: 520,
+            color: dColor,
+            damage: 0.5,
+            isHeatSeeking: true,
+            target: target
+          });
         }
       }
 
@@ -1118,8 +1116,43 @@ class ExploreGameEngine {
     });
 
     this.droneBeams = this.droneBeams.filter(b => {
-      b.y -= b.speed * dt;
-      return b.y > -30;
+      if (b.isHeatSeeking) {
+        let currentTarget = b.target;
+        if (!currentTarget || (currentTarget.hp !== undefined && currentTarget.hp <= 0)) {
+          let minDist = Infinity;
+          let newTarget = null;
+          if (this.isBossActive && this.boss) {
+            newTarget = this.boss;
+          } else {
+            const potentialTargets = [...this.enemies, ...this.asteroids];
+            for (const t of potentialTargets) {
+              const dist = Math.hypot(t.x - b.x, t.y - b.y);
+              if (dist < minDist) {
+                minDist = dist;
+                newTarget = t;
+              }
+            }
+          }
+          b.target = newTarget;
+          currentTarget = newTarget;
+        }
+
+        if (currentTarget) {
+          const dx = currentTarget.x - b.x;
+          const dy = currentTarget.y - b.y;
+          const len = Math.hypot(dx, dy) || 1;
+          b.vx += ((dx / len) * b.speed - b.vx) * 10 * dt;
+          b.vy += ((dy / len) * b.speed - b.vy) * 10 * dt;
+        } else {
+          b.vy = -b.speed;
+        }
+
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+      } else {
+        b.y -= b.speed * dt;
+      }
+      return b.y > -50 && b.y < this.canvas.height + 50 && b.x > -50 && b.x < this.canvas.width + 50;
     });
 
     this.chargeBullets = this.chargeBullets.filter(b => {
@@ -1197,7 +1230,7 @@ class ExploreGameEngine {
 
       for (let i = this.droneBeams.length - 1; i >= 0; i--) {
         const b = this.droneBeams[i];
-        if (hitBox(b.x, b.y, 4, b.length, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
+        if (hitBox(b.x, b.y, 8, 8, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
           this.boss.hp -= b.damage;
           this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 5);
           this.droneBeams.splice(i, 1);
@@ -1296,14 +1329,14 @@ class ExploreGameEngine {
       if (consumed) this.bullets.splice(i, 1);
     }
 
-    // Handle AI Drone Beam Collisions
+    // Handle AI Drone Homing Beam Collisions
     for (let i = this.droneBeams.length - 1; i >= 0; i--) {
       const b = this.droneBeams[i];
       let consumed = false;
 
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const e = this.enemies[j];
-        if (hitBox(b.x, b.y, 4, b.length, e.x, e.y, e.w, e.h)) {
+        if (hitBox(b.x, b.y, 8, 8, e.x, e.y, e.w, e.h)) {
           e.hp -= b.damage;
           this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 4);
           consumed = true;
@@ -1328,7 +1361,7 @@ class ExploreGameEngine {
       if (!consumed) {
         for (let j = this.asteroids.length - 1; j >= 0; j--) {
           const a = this.asteroids[j];
-          if (hitBox(b.x, b.y, 4, b.length, a.x, a.y, a.size, a.size)) {
+          if (hitBox(b.x, b.y, 8, 8, a.x, a.y, a.size, a.size)) {
             a.hp -= b.damage;
             this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 4);
             consumed = true;
@@ -1692,15 +1725,12 @@ class ExploreGameEngine {
 
     for (const b of this.droneBeams) {
       ctx.save();
-      const dColor = this.stats.data.selectedDroneColor || this.stats.data.selectedShipColor;
-      ctx.strokeStyle = dColor;
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = dColor;
+      ctx.fillStyle = b.color;
+      ctx.shadowColor = b.color;
       ctx.shadowBlur = 14;
       ctx.beginPath();
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x, b.y + b.length);
-      ctx.stroke();
+      ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
 
