@@ -823,6 +823,7 @@ class ExploreGameEngine {
             y: this.drone.y - 12,
             vx: 0,
             vy: -500,
+            length: 22,
             speed: 520,
             color: dColor,
             damage: 0.5,
@@ -1230,7 +1231,7 @@ class ExploreGameEngine {
 
       for (let i = this.droneBeams.length - 1; i >= 0; i--) {
         const b = this.droneBeams[i];
-        if (hitBox(b.x, b.y, 8, 8, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
+        if (hitBox(b.x, b.y, 4, b.length, this.boss.x, this.boss.y, this.boss.w, this.boss.h)) {
           this.boss.hp -= b.damage;
           this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 5);
           this.droneBeams.splice(i, 1);
@@ -1336,7 +1337,7 @@ class ExploreGameEngine {
 
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const e = this.enemies[j];
-        if (hitBox(b.x, b.y, 8, 8, e.x, e.y, e.w, e.h)) {
+        if (hitBox(b.x, b.y, 4, b.length, e.x, e.y, e.w, e.h)) {
           e.hp -= b.damage;
           this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 4);
           consumed = true;
@@ -1361,7 +1362,7 @@ class ExploreGameEngine {
       if (!consumed) {
         for (let j = this.asteroids.length - 1; j >= 0; j--) {
           const a = this.asteroids[j];
-          if (hitBox(b.x, b.y, 8, 8, a.x, a.y, a.size, a.size)) {
+          if (hitBox(b.x, b.y, 4, b.length, a.x, a.y, a.size, a.size)) {
             a.hp -= b.damage;
             this.spawnExplosion(b.x, b.y, d.selectedDroneColor || d.selectedShipColor, 4);
             consumed = true;
@@ -1725,12 +1726,20 @@ class ExploreGameEngine {
 
     for (const b of this.droneBeams) {
       ctx.save();
-      ctx.fillStyle = b.color;
-      ctx.shadowColor = b.color;
+      const dColor = this.stats.data.selectedDroneColor || this.stats.data.selectedShipColor;
+      ctx.strokeStyle = dColor;
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = dColor;
       ctx.shadowBlur = 14;
+
+      const speedLen = Math.hypot(b.vx || 0, b.vy || -1) || 1;
+      const tailX = b.x - ((b.vx || 0) / speedLen) * (b.length || 22);
+      const tailY = b.y - ((b.vy || -1) / speedLen) * (b.length || 22);
+
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
       ctx.restore();
     }
 
