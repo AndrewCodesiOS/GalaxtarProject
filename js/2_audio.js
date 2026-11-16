@@ -27,7 +27,7 @@ class AudioController {
   }
 
   init() {
-    if (!this.audioCtx) {
+    if (!this.audioCtx || this.audioCtx.state === "closed") {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     if (this.audioCtx.state === "suspended") {
@@ -38,14 +38,13 @@ class AudioController {
     }
   }
 
-  // Universal safety check to revive stalled audio contexts mid-session
+  // Universal safety check to revive stalled or closed audio contexts mid-session
   ensureActive() {
-    if (this.audioCtx) {
-      if (this.audioCtx.state === "suspended" || this.audioCtx.state === "interrupted") {
-        this.audioCtx.resume().catch(e => console.log("Audio context recovery error:", e));
-      }
-    } else {
-      this.init();
+    if (!this.audioCtx || this.audioCtx.state === "closed") {
+      this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.audioCtx.state === "suspended" || this.audioCtx.state === "interrupted") {
+      this.audioCtx.resume().catch(e => console.log("Audio context recovery error:", e));
     }
   }
 
@@ -81,7 +80,7 @@ class AudioController {
 
   startBossSynth() {
     this.init();
-    if (!this.audioCtx || this.bossInterval) return;
+    if (this.bossInterval) return;
 
     const bassNotes = [110, 110, 130.81, 98.00];
     const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
@@ -90,7 +89,7 @@ class AudioController {
     this.bossInterval = setInterval(() => {
       if (!this.musicEnabled) return;
       this.ensureActive();
-      if (!this.audioCtx || this.audioCtx.state !== "running") return;
+      if (!this.audioCtx) return;
       
       try {
         const now = this.audioCtx.currentTime;
@@ -138,62 +137,74 @@ class AudioController {
   playGunSound() {
     if (!this.sfxEnabled) return;
     this.ensureActive();
-    if (!this.audioCtx || this.audioCtx.state !== "running") return;
+    if (!this.audioCtx) return;
 
-    const osc = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
-    osc.connect(gain);
-    gain.connect(this.audioCtx.destination);
-    osc.start();
-    osc.stop(this.audioCtx.currentTime + 0.1);
+    try {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start();
+      osc.stop(this.audioCtx.currentTime + 0.1);
+    } catch (e) {
+      console.log("Gun sound error:", e);
+    }
   }
 
   playChargeBeamSound() {
     if (!this.sfxEnabled) return;
     this.ensureActive();
-    if (!this.audioCtx || this.audioCtx.state !== "running") return;
+    if (!this.audioCtx) return;
 
-    const osc = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
-    osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
-    gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(this.audioCtx.destination);
-    osc.start();
-    osc.stop(this.audioCtx.currentTime + 0.25);
+    try {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start();
+      osc.stop(this.audioCtx.currentTime + 0.25);
+    } catch (e) {
+      console.log("Charge beam sound error:", e);
+    }
   }
 
   playExplosion(isAsteroid = false) {
     if (!this.sfxEnabled) return;
     this.ensureActive();
-    if (!this.audioCtx || this.audioCtx.state !== "running") return;
+    if (!this.audioCtx) return;
 
-    const bufferSize = this.audioCtx.sampleRate * 0.3;
-    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
+    try {
+      const bufferSize = this.audioCtx.sampleRate * 0.3;
+      const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = this.audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.audioCtx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(isAsteroid ? 400 : 800, this.audioCtx.currentTime);
+      filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.3);
+      const gain = this.audioCtx.createGain();
+      gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      noise.start();
+    } catch (e) {
+      console.log("Explosion sound error:", e);
     }
-    const noise = this.audioCtx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.audioCtx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(isAsteroid ? 400 : 800, this.audioCtx.currentTime);
-    filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.3);
-    const gain = this.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.audioCtx.destination);
-    noise.start();
   }
 }
