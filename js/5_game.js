@@ -872,11 +872,11 @@ class ExploreGameEngine {
       }
 
       if (this.distance >= this.nextDifficultyMilestone && !this.isBossActive) {
-        if (this.distance < 150000) {
+        if (this.distance < 250000) {
           this.dynamicSpawnMult += 0.1 + Math.random() * 0.1;
           this.nextDifficultyMilestone = this.distance + 9000 + Math.random() * 7000;
         } else {
-          this.dynamicSpawnMult = Math.max(this.dynamicSpawnMult, 2.5); // capped peak intensity
+          this.dynamicSpawnMult = Math.max(this.dynamicSpawnMult, 3.5); // capped peak intensity
         }
       }
 
