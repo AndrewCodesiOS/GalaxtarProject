@@ -189,7 +189,7 @@ class AudioController {
   stopBossSynth() {
     if (this.bossInterval) {
       clearInterval(this.bossInterval);
-    this.bossInterval = null;
+      this.bossInterval = null;
     }
   }
 
@@ -262,6 +262,8 @@ class AudioController {
       filter.connect(gain);
       gain.connect(this.audioCtx.destination);
       noise.start();
-    } (...) // error catch block
+    } catch (e) {
+      console.log("Explosion sound error:", e);
+    }
   }
 }
