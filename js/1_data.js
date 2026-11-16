@@ -127,7 +127,7 @@ const GALAXTAR_DATA = {
       color: "#3498db",
       price: 50,
       weight: 18,
-      desc: "All asteroids take exactly 1 shot to destroy."
+      desc: "All asteroids take 1 shot to destroy."
     },
     {
       id: "fuel_extractor",
