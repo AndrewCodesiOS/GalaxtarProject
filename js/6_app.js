@@ -18,9 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Unlock and start background music on the very first user interaction anywhere on the screen
   const unlockAudioOnFirstInteraction = () => {
     audio.init();
-    if (stats.data.musicOn) {
-      audio.bgMusic.play().catch(e => console.log("Initial music play blocked:", e));
-    }
     window.removeEventListener("pointerdown", unlockAudioOnFirstInteraction);
     window.removeEventListener("keydown", unlockAudioOnFirstInteraction);
   };
