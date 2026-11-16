@@ -4,40 +4,26 @@ class AudioController {
     this.musicEnabled = true;
     this.sfxEnabled = true;
     
-    // Buffer for the loaded m4a audio file (bypasses OS media player hooks)
-    this.musicBuffer = null;
-    this.musicSource = null;
-    this.musicGain = null;
-
-    // Load the m4a file into memory
-    this.loadMusicFile();
+    // Background music setup using your m4a file
+    this.bgMusic = new Audio("galaxtartheme.m4a");
+    this.bgMusic.loop = true;
+    this.bgMusic.volume = 0.5;
 
     // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
     this.bossInterval = null;
 
-    // Pause audio when switching tabs
+    // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
-        this.stopMusicBuffer();
+        this.bgMusic.pause();
         this.stopBossSynth();
       } else {
         if (this.musicEnabled && !this.isBossMusicPlaying) {
-          this.playMusicBuffer();
+          this.bgMusic.play().catch(e => console.log("Music resume error:", e));
         }
       }
     });
-  }
-
-  async loadMusicFile() {
-    try {
-      const response = await fetch("galaxtartheme.m4a");
-      const arrayBuffer = await response.arrayBuffer();
-      const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
-      this.musicBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-    } catch (e) {
-      console.log("Music buffer load warning:", e);
-    }
   }
 
   init() {
@@ -45,53 +31,21 @@ class AudioController {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     if (this.audioCtx.state === "suspended") {
-      this.audioCtx.resume().catch(e => {});
+      this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && !this.isBossMusicPlaying) {
-      this.playMusicBuffer();
+    if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
+      this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
     }
   }
 
+  // Universal safety check to revive stalled audio contexts mid-session
   ensureActive() {
     if (this.audioCtx) {
       if (this.audioCtx.state === "suspended" || this.audioCtx.state === "interrupted") {
-        this.audioCtx.resume().catch(e => {});
+        this.audioCtx.resume().catch(e => console.log("Audio context recovery error:", e));
       }
     } else {
       this.init();
-    }
-  }
-
-  playMusicBuffer() {
-    this.init();
-    if (!this.audioCtx || !this.musicBuffer || this.musicSource || this.isBossMusicPlaying) return;
-
-    try {
-      if (this.audioCtx.state === "suspended") {
-        this.audioCtx.resume();
-      }
-      this.musicSource = this.audioCtx.createBufferSource();
-      this.musicSource.buffer = this.musicBuffer;
-      this.musicSource.loop = true;
-
-      this.musicGain = this.audioCtx.createGain();
-      this.musicGain.gain.setValueAtTime(0.4, this.audioCtx.currentTime);
-
-      this.musicSource.connect(this.musicGain);
-      this.musicGain.connect(this.audioCtx.destination);
-      this.musicSource.start(0);
-    } catch (e) {
-      console.log("Buffer music play error:", e);
-    }
-  }
-
-  stopMusicBuffer() {
-    if (this.musicSource) {
-      try {
-        this.musicSource.stop();
-        this.musicSource.disconnect();
-      } catch (e) {}
-      this.musicSource = null;
     }
   }
 
@@ -101,17 +55,17 @@ class AudioController {
       if (this.isBossMusicPlaying) {
         this.startBossSynth();
       } else {
-        this.playMusicBuffer();
+        this.bgMusic.play().catch(e => console.log("Music play error:", e));
       }
     } else {
-      this.stopMusicBuffer();
+      this.bgMusic.pause();
       this.stopBossSynth();
     }
   }
 
   switchToBossMusic() {
     this.isBossMusicPlaying = true;
-    this.stopMusicBuffer();
+    this.bgMusic.pause();
     if (this.musicEnabled) {
       this.startBossSynth();
     }
@@ -121,16 +75,16 @@ class AudioController {
     this.isBossMusicPlaying = false;
     this.stopBossSynth();
     if (this.musicEnabled) {
-      this.playMusicBuffer();
+      this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
     }
   }
 
   startBossSynth() {
     this.init();
-    this.stopMusicBuffer();
-    if (this.bossInterval) return;
+    if (!this.audioCtx || this.bossInterval) return;
 
     const bassNotes = [110, 110, 130.81, 98.00];
+    const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
     let step = 0;
 
     this.bossInterval = setInterval(() => {
@@ -140,22 +94,38 @@ class AudioController {
       
       try {
         const now = this.audioCtx.currentTime;
+
         const bassOsc = this.audioCtx.createOscillator();
         const bassGain = this.audioCtx.createGain();
         bassOsc.type = "sawtooth";
         bassOsc.frequency.setValueAtTime(bassNotes[Math.floor(step / 2) % bassNotes.length], now);
         
-        bassGain.gain.setValueAtTime(0.08, now);
-        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        bassGain.gain.setValueAtTime(0.12, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
         bassOsc.connect(bassGain);
         bassGain.connect(this.audioCtx.destination);
         bassOsc.start(now);
-        bassOsc.stop(now + 0.15);
+        bassOsc.stop(now + 0.2);
+
+        const leadOsc = this.audioCtx.createOscillator();
+        const leadGain = this.audioCtx.createGain();
+        leadOsc.type = "square";
+        leadOsc.frequency.setValueAtTime(leadNotes[step % leadNotes.length], now);
+
+        leadGain.gain.setValueAtTime(0.08, now);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+        leadOsc.connect(leadGain);
+        leadGain.connect(this.audioCtx.destination);
+        leadOsc.start(now);
+        leadOsc.stop(now + 0.15);
 
         step++;
-      } catch (e) {}
-    }, 200);
+      } catch (e) {
+        console.log("Boss synth tick error:", e);
+      }
+    }, 150);
   }
 
   stopBossSynth() {
@@ -170,19 +140,17 @@ class AudioController {
     this.ensureActive();
     if (!this.audioCtx || this.audioCtx.state !== "running") return;
 
-    try {
-      const osc = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc.start();
-      osc.stop(this.audioCtx.currentTime + 0.08);
-    } catch (e) {}
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.1);
   }
 
   playChargeBeamSound() {
@@ -190,19 +158,17 @@ class AudioController {
     this.ensureActive();
     if (!this.audioCtx || this.audioCtx.state !== "running") return;
 
-    try {
-      const osc = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
-      osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2);
-      osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc.start();
-      osc.stop(this.audioCtx.currentTime + 0.2);
-    } catch (e) {}
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.25);
   }
 
   playExplosion(isAsteroid = false) {
@@ -210,26 +176,24 @@ class AudioController {
     this.ensureActive();
     if (!this.audioCtx || this.audioCtx.state !== "running") return;
 
-    try {
-      const bufferSize = this.audioCtx.sampleRate * 0.2;
-      const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-      const noise = this.audioCtx.createBufferSource();
-      noise.buffer = buffer;
-      const filter = this.audioCtx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(isAsteroid ? 350 : 600, this.audioCtx.currentTime);
-      filter.frequency.linearRampToValueAtTime(30, this.audioCtx.currentTime + 0.2);
-      const gain = this.audioCtx.createGain();
-      gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      noise.start();
-    } catch (e) {}
+    const bufferSize = this.audioCtx.sampleRate * 0.3;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(isAsteroid ? 400 : 800, this.audioCtx.currentTime);
+    filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.3);
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    noise.start();
   }
 }
