@@ -102,8 +102,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (missing > 0) {
         btnRefuel.classList.remove("hidden");
         
-        // Soft-lock prevention: If player cannot afford the refuel cost, trigger Emergency Refuel
-        if (stats.data.totalPoints < refuelCost) {
+        // Soft-lock prevention: Emergency Refuel is only available for free when currentFuel is 0 and player cannot afford the cost
+        if (stats.data.currentFuel <= 0 && stats.data.totalPoints < refuelCost) {
           btnRefuel.innerText = `EMERGENCY REFUEL (FREE)`;
           btnRefuel.disabled = false;
           btnRefuel.classList.remove("disabled");
@@ -149,11 +149,16 @@ document.addEventListener("DOMContentLoaded", () => {
           stats.save();
           window.updateFuelWidget();
         } else {
-          // EMERGENCY STIPEND: Triggered whenever the player cannot afford the refuel cost
-          stats.data.currentFuel = max; // Fully fill their tank for free so they aren't trapped
-          stats.save();
-          window.updateFuelWidget();
-          alert("DISTRESS BEACON RECEIVED: Star Command has fully refueled your vessel on the house to get you back into the void!");
+          if (stats.data.currentFuel <= 0) {
+            // EMERGENCY STIPEND: Triggered only when completely out of fuel (0) and unable to afford
+            stats.data.currentFuel = max;
+            stats.save();
+            window.updateFuelWidget();
+            alert("DISTRESS BEACON RECEIVED: Star Command has fully refueled your vessel on the house to get you back into the void!");
+          } else {
+            // Player has fuel remaining but cannot afford the full refuel cost
+            alert("Insufficient points for full refuel.");
+          }
         }
       }
     });
