@@ -4,10 +4,9 @@ class AudioController {
     this.musicEnabled = true;
     this.sfxEnabled = true;
     
-    // Background music setup using your m4a file
-    this.bgMusic = new Audio("galaxtartheme.m4a");
-    this.bgMusic.loop = true;
-    this.bgMusic.volume = 0.5;
+    // Ambient Background Music State (Procedural Web Audio Synth)
+    this.isMusicPlaying = false;
+    this.ambientInterval = null;
 
     // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
@@ -16,11 +15,11 @@ class AudioController {
     // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
-        this.bgMusic.pause();
+        this.stopAmbientSynth();
         this.stopBossSynth();
       } else {
         if (this.musicEnabled && !this.isBossMusicPlaying) {
-          this.bgMusic.play().catch(e => console.log("Music resume error:", e));
+          this.startAmbientSynth();
         }
       }
     });
@@ -33,8 +32,8 @@ class AudioController {
     if (this.audioCtx.state === "suspended") {
       this.audioCtx.resume().catch(e => console.log("AudioContext resume error:", e));
     }
-    if (this.musicEnabled && !this.isBossMusicPlaying && this.bgMusic.paused) {
-      this.bgMusic.play().catch(e => console.log("Music autoplay blocked or file missing:", e));
+    if (this.musicEnabled && !this.isBossMusicPlaying && !this.ambientInterval) {
+      this.startAmbientSynth();
     }
   }
 
@@ -54,17 +53,17 @@ class AudioController {
       if (this.isBossMusicPlaying) {
         this.startBossSynth();
       } else {
-        this.bgMusic.play().catch(e => console.log("Music play error:", e));
+        this.startAmbientSynth();
       }
     } else {
-      this.bgMusic.pause();
+      this.stopAmbientSynth();
       this.stopBossSynth();
     }
   }
 
   switchToBossMusic() {
     this.isBossMusicPlaying = true;
-    this.bgMusic.pause();
+    this.stopAmbientSynth();
     if (this.musicEnabled) {
       this.startBossSynth();
     }
@@ -74,12 +73,72 @@ class AudioController {
     this.isBossMusicPlaying = false;
     this.stopBossSynth();
     if (this.musicEnabled) {
-      this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
+      this.startAmbientSynth();
+    }
+  }
+
+  startAmbientSynth() {
+    this.init();
+    if (this.ambientInterval || this.isBossMusicPlaying) return;
+    this.isMusicPlaying = true;
+
+    // Soft cosmic chord pad frequencies (Deep Space Ambient harmony)
+    const chordFrequencies = [130.81, 196.00, 220.00, 261.63]; // C3, G3, A3, C4
+    let chordIndex = 0;
+
+    const playChordPad = () => {
+      if (!this.musicEnabled || this.isBossMusicPlaying) return;
+      this.ensureActive();
+      if (!this.audioCtx) return;
+
+      try {
+        const now = this.audioCtx.currentTime;
+        const freq = chordFrequencies[chordIndex];
+        chordIndex = (chordIndex + 1) % chordFrequencies.length;
+
+        // Create warm ambient oscillator pad with filter
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        const filter = this.audioCtx.createBiquadFilter();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(400, now);
+
+        // Slow, smooth attack and release envelope so it fades seamlessly
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.04, now + 2.5);
+        gain.gain.linearRampToValueAtTime(0.001, now + 6.0);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 6.0);
+      } catch (e) {
+        console.log("Ambient synth tick error:", e);
+      }
+    };
+
+    // Trigger initial pad immediately, then loop every 5 seconds
+    playChordPad();
+    this.ambientInterval = setInterval(playChordPad, 5000);
+  }
+
+  stopAmbientSynth() {
+    this.isMusicPlaying = false;
+    if (this.ambientInterval) {
+      clearInterval(this.ambientInterval);
+      this.ambientInterval = null;
     }
   }
 
   startBossSynth() {
     this.init();
+    this.stopAmbientSynth();
     if (this.bossInterval) return;
 
     const bassNotes = [110, 110, 130.81, 98.00];
@@ -130,7 +189,7 @@ class AudioController {
   stopBossSynth() {
     if (this.bossInterval) {
       clearInterval(this.bossInterval);
-      this.bossInterval = null;
+    this.bossInterval = null;
     }
   }
 
@@ -203,8 +262,6 @@ class AudioController {
       filter.connect(gain);
       gain.connect(this.audioCtx.destination);
       noise.start();
-    } catch (e) {
-      console.log("Explosion sound error:", e);
-    }
+    } (...) // error catch block
   }
 }
