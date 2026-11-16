@@ -775,7 +775,7 @@ class ExploreGameEngine {
         this.ship.y = Math.max(30, Math.min(this.canvas.height - 40, this.ship.y));
       }
 
-      // AI Drone smooth player-relative floating behavior & expanded-range heat-seeking laser firing
+      // AI Drone smooth player-relative floating behavior & range-restricted heat-seeking laser firing
       if (this.hasAiDrone && this.drone) {
         const targetX = this.ship.x + 45;
         const targetY = this.ship.y + 15;
@@ -817,19 +817,22 @@ class ExploreGameEngine {
             }
           }
 
-          const dColor = d.selectedDroneColor || d.selectedShipColor;
-          this.droneBeams.push({
-            x: this.drone.x,
-            y: this.drone.y - 12,
-            vx: 0,
-            vy: -500,
-            length: 22,
-            speed: 520,
-            color: dColor,
-            damage: 0.5,
-            isHeatSeeking: true,
-            target: target
-          });
+          // Only fire if a target is actually found within range!
+          if (target) {
+            const dColor = d.selectedDroneColor || d.selectedShipColor;
+            this.droneBeams.push({
+              x: this.drone.x,
+              y: this.drone.y - 12,
+              vx: 0,
+              vy: -500,
+              length: 22,
+              speed: 520,
+              color: dColor,
+              damage: 0.5,
+              isHeatSeeking: true,
+              target: target
+            });
+          }
         }
       }
 
