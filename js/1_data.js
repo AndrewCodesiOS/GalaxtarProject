@@ -139,6 +139,15 @@ const GALAXTAR_DATA = {
       desc: "Destroying enemy ships grants +2 fuel per kill."
     },
     {
+      id: "infinite_power_prism",
+      name: "Infinite Power Prism",
+      rarity: "RARE",
+      color: "#3498db",
+      price: 75,
+      weight: 15,
+      desc: "Grants absolute invincibility for the first 10,000 meters of flight. Smash through enemies and asteroids!"
+    },
+    {
       id: "phoenix_protocol",
       name: "Phoenix Protocol",
       rarity: "EPIC",
