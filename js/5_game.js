@@ -995,7 +995,6 @@ class ExploreGameEngine {
           this.boss.hp = 150;
           this.boss.color = "#ff2200";
           
-          // Trigger custom rebirth sound effect & switch to the Reborn boss music theme!
           if (this.audio && typeof this.audio.playPhoenixRebirthSound === "function") {
             this.audio.playPhoenixRebirthSound();
           }
@@ -1502,7 +1501,6 @@ class ExploreGameEngine {
     if (tier === 160000) this.bossDefeatedAt160k = true;
     if (tier === 200000) {
       this.bossDefeatedAt200k = true;
-      // Trigger final boss victory pop-up display with player name
       if (window.showFinalBossVictoryModal) {
         window.showFinalBossVictoryModal();
       }
@@ -1822,7 +1820,6 @@ class ExploreGameEngine {
     if (!this.isGameOver || this.isManualEnd) {
       ctx.save();
       
-      // True high-speed Mario-style flashing effect when Infinite Power Prism is active
       if (this.hasPrismaticInvincibility) {
         const isVisible = Math.floor(performance.now() / 80) % 2 === 0;
         ctx.globalAlpha = isVisible ? 1.0 : 0.15;
