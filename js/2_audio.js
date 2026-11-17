@@ -52,7 +52,7 @@ class AudioController {
     this.musicEnabled = val;
     if (val) {
       if (this.isBossMusicPlaying) {
-        this.startBossSynth();
+        this.startBossSynth(this.currentBossTier || 40000);
       } else {
         this.bgMusic.play().catch(e => console.log("Music play error:", e));
       }
@@ -62,28 +62,75 @@ class AudioController {
     }
   }
 
-  switchToBossMusic() {
+  switchToBossMusic(bossTier = 40000) {
     this.isBossMusicPlaying = true;
+    this.currentBossTier = bossTier;
     this.bgMusic.pause();
     if (this.musicEnabled) {
-      this.startBossSynth();
+      this.startBossSynth(bossTier);
     }
   }
 
   switchToNormalMusic() {
     this.isBossMusicPlaying = false;
+    this.currentBossTier = null;
     this.stopBossSynth();
     if (this.musicEnabled) {
       this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
     }
   }
 
-  startBossSynth() {
+  startBossSynth(tier) {
     this.init();
     if (this.bossInterval) return;
 
-    const bassNotes = [110, 110, 130.81, 98.00];
-    const leadNotes = [220, 329.63, 440, 523.25, 440, 329.63];
+    // Define unique musical profiles for each boss tier
+    let profile = {
+      bassNotes: [110, 110, 130.81, 98.00],
+      leadNotes: [220, 329.63, 440, 523.25],
+      bassType: "sawtooth",
+      leadType: "square",
+      tempo: 150
+    };
+
+    if (tier === 80000) {
+      // Vortex Interceptor: Eerie, pulsing sub-bass & detuned notes
+      profile = {
+        bassNotes: [82.41, 73.42, 92.50, 65.41],
+        leadNotes: [164.81, 196.00, 246.94, 220.00],
+        bassType: "sine",
+        leadType: "sawtooth",
+        tempo: 180
+      };
+    } else if (tier === 120000) {
+      // Helios Phoenix: Soaring, energetic high-register arpeggios
+      profile = {
+        bassNotes: [146.83, 220.00, 196.00, 164.81],
+        leadNotes: [440, 554.37, 659.25, 880],
+        bassType: "square",
+        leadType: "triangle",
+        tempo: 120
+      };
+    } else if (tier === 160000) {
+      // Hydra-9 Swarm: Chaotic, shifting multi-rhythms
+      profile = {
+        bassNotes: [110, 146.83, 98.00, 123.47],
+        leadNotes: [220, 277.18, 329.63, 415.30],
+        bassType: "sawtooth",
+        leadType: "sawtooth",
+        tempo: 110
+      };
+    } else if (tier === 200000) {
+      // Eternity Engine: Intimidating, heavy cathedral sweeps & metallic chimes
+      profile = {
+        bassNotes: [55.00, 55.00, 65.41, 49.00],
+        leadNotes: [110, 220, 329.63, 440, 880],
+        bassType: "sawtooth",
+        leadType: "square",
+        tempo: 200
+      };
+    }
+
     let step = 0;
 
     this.bossInterval = setInterval(() => {
@@ -96,8 +143,8 @@ class AudioController {
 
         const bassOsc = this.audioCtx.createOscillator();
         const bassGain = this.audioCtx.createGain();
-        bassOsc.type = "sawtooth";
-        bassOsc.frequency.setValueAtTime(bassNotes[Math.floor(step / 2) % bassNotes.length], now);
+        bassOsc.type = profile.bassType;
+        bassOsc.frequency.setValueAtTime(profile.bassNotes[Math.floor(step / 2) % profile.bassNotes.length], now);
         
         bassGain.gain.setValueAtTime(0.12, now);
         bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
@@ -109,8 +156,8 @@ class AudioController {
 
         const leadOsc = this.audioCtx.createOscillator();
         const leadGain = this.audioCtx.createGain();
-        leadOsc.type = "square";
-        leadOsc.frequency.setValueAtTime(leadNotes[step % leadNotes.length], now);
+        leadOsc.type = profile.leadType;
+        leadOsc.frequency.setValueAtTime(profile.leadNotes[step % profile.leadNotes.length], now);
 
         leadGain.gain.setValueAtTime(0.08, now);
         leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
@@ -124,7 +171,7 @@ class AudioController {
       } catch (e) {
         console.log("Boss synth tick error:", e);
       }
-    }, 150);
+    }, profile.tempo);
   }
 
   stopBossSynth() {
