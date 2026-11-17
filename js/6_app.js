@@ -241,6 +241,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Low-Fuel Warning Modal Elements & Flow
+  const lowFuelModal = document.getElementById("low-fuel-modal");
+  const lowFuelMsg = document.getElementById("low-fuel-msg");
+  const btnFuelBack = document.getElementById("btn-fuel-back");
+  const btnFuelLaunch = document.getElementById("btn-fuel-launch");
+
+  function proceedWithLaunch() {
+    if (stats.data.isPeacefulMode) {
+      showView("view-explore");
+      gameEngine.startSession([]);
+    } else {
+      openLoadoutModal();
+    }
+  }
+
+  if (btnFuelBack) {
+    btnFuelBack.addEventListener("click", () => {
+      if (lowFuelModal) lowFuelModal.classList.add("hidden");
+    });
+  }
+
+  if (btnFuelLaunch) {
+    btnFuelLaunch.addEventListener("click", () => {
+      if (lowFuelModal) lowFuelModal.classList.add("hidden");
+      proceedWithLaunch();
+    });
+  }
+
   // Menu Buttons
   const btnLaunch = document.getElementById("btn-launch");
   if (btnLaunch) {
@@ -249,12 +277,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (introModal) introModal.classList.remove("hidden");
         return;
       }
-      if (stats.data.isPeacefulMode) {
-        showView("view-explore");
-        gameEngine.startSession([]);
-      } else {
-        openLoadoutModal();
+
+      const currentFuel = stats.data.currentFuel;
+      const maxFuel = stats.maxFuel();
+      const fuelPercentage = currentFuel / maxFuel;
+
+      if (!stats.data.isPeacefulMode && fuelPercentage < 0.25) {
+        if (lowFuelMsg) {
+          lowFuelMsg.innerText = `Your fuel reserves are critically low (${Math.floor(currentFuel)}/${maxFuel}). Consider refueling from the main menu first!\n\nDo you still wish to launch anyway?`;
+        }
+        if (lowFuelModal) {
+          lowFuelModal.classList.remove("hidden");
+        }
+        return;
       }
+
+      proceedWithLaunch();
     });
   }
 
