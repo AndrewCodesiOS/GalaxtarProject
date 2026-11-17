@@ -1545,18 +1545,33 @@ class ExploreGameEngine {
     this.ship.hp = Math.max(0, this.ship.hp - amount);
     this.isInvulnerable = true;
     this.invulnTimer = 0.5;
+    
     if (this.ship.hp <= 0) {
       if (this.phoenixAvailable) {
         this.phoenixAvailable = false;
         this.ship.hp = this.ship.maxHP;
         this.invulnTimer = 2.0;
+        
+        // Clear bullets and enemies safely to prevent frame stalls
         this.enemyBullets = [];
-        this.enemies.forEach(e => this.spawnExplosion(e.x, e.y, e.color, 20));
+        const oldEnemies = [...this.enemies];
         this.enemies = [];
+        
+        // Stagger particle explosions slightly to prevent render queue choking
+        oldEnemies.forEach((e, index) => {
+          setTimeout(() => {
+            this.spawnExplosion(e.x, e.y, e.color, 15);
+          }, index * 10);
+        });
+
         this.audio.playChargeBeamSound();
         this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 45);
+        
+        // Force refresh the last frame timestamp to prevent dt spikes
+        this.lastFrameTime = performance.now();
         return;
       }
+      
       this.audio.switchToNormalMusic();
       this.triggerGameOver(false);
     }
