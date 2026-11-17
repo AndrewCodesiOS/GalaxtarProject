@@ -1501,6 +1501,7 @@ class ExploreGameEngine {
     if (tier === 160000) this.bossDefeatedAt160k = true;
     if (tier === 200000) {
       this.bossDefeatedAt200k = true;
+      this.pause(); // Pause engine execution internally as well
       if (window.showFinalBossVictoryModal) {
         window.showFinalBossVictoryModal();
       }
