@@ -30,6 +30,20 @@
       </div>
     </div>
 
+    <!-- LOW FUEL WARNING MODAL -->
+    <div id="low-fuel-modal" class="overlay hidden">
+      <div class="gameover-card" style="max-width: 400px; text-align: center; border-color: #e74c3c;">
+        <h2 style="color: #e74c3c; letter-spacing: 2px;">CRITICAL FUEL</h2>
+        <p id="low-fuel-msg" style="font-size: 0.85rem; color: #ccc; line-height: 1.5;">
+          Your fuel reserves are critically low. Launching now may cut your exploration short!
+        </p>
+        <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+          <button id="btn-fuel-back" class="pill-btn gray" style="flex: 1; padding: 12px;">GO BACK</button>
+          <button id="btn-fuel-launch" class="continue-btn" style="flex: 1; background: #e74c3c; color: #fff;">LAUNCH ANYWAY</button>
+        </div>
+      </div>
+    </div>
+
     <!-- POST-FLIGHT MODULE SHOP MODAL -->
     <div id="module-shop-modal" class="overlay hidden">
       <div class="gameover-card" style="max-width: 440px; max-height: 85vh; border-color: #f1c40f;">
@@ -101,7 +115,7 @@
       <button id="btn-pause" class="hud-btn top-right" title="Pause Flight">❚❚</button>
 
       <!-- Game Over Overlay -->
-<div id="gameover-overlay" class="overlay hidden">
+      <div id="gameover-overlay" class="overlay hidden">
         <div class="gameover-card">
           <h2>FLIGHT STATS</h2>
           <div id="gameover-grid" class="gameover-grid"></div>
