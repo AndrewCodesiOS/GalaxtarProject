@@ -205,6 +205,9 @@ class ExploreGameEngine {
     this.haloAvailable = this.activeModules.has("halo_barrier");
     this.hasAiDrone = this.activeModules.has("ai_drone");
 
+    // Initialize Infinite Power Prism distance threshold (first 10,000 meters)
+    this.hasPrismaticInvincibility = this.activeModules.has("infinite_power_prism");
+
     const d = this.stats.data;
     const shieldInfo = GALAXTAR_DATA.shieldLevels[d.shieldLevel - 1];
     
@@ -746,7 +749,13 @@ class ExploreGameEngine {
     if (!this.isGameOver) {
       if (!this.isBossActive) {
         this.elapsedTime += dt;
-        this.distance += 220 * passiveDistanceMultiplier * dt;
+        const distanceDelta = 220 * passiveDistanceMultiplier * dt;
+        this.distance += distanceDelta;
+
+        // Check if Infinite Power Prism threshold (10,000 meters) has expired
+        if (this.hasPrismaticInvincibility && this.distance >= 10000) {
+          this.hasPrismaticInvincibility = false;
+        }
 
         if (!d.isPeacefulMode) {
           if (this.distance >= 40000 && !this.bossDefeatedAt40k && !this.isBossActive) {
@@ -1420,6 +1429,7 @@ class ExploreGameEngine {
       const eb = this.enemyBullets[i];
       if (hitBox(eb.x, eb.y, eb.size, eb.size, this.ship.x, this.ship.y, this.ship.w * 0.8, this.ship.h * 0.8)) {
         this.enemyBullets.splice(i, 1);
+        if (this.hasPrismaticInvincibility) continue;
         if (!this.isInvulnerable) {
           this.damagePlayer(1);
         }
@@ -1429,6 +1439,18 @@ class ExploreGameEngine {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       if (hitBox(e.x, e.y, e.w * 0.85, e.h * 0.85, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
+        if (this.hasPrismaticInvincibility) {
+          const pts = e.points;
+          this.sessionShips++;
+          if (!d.isPeacefulMode) {
+            this.sessionPoints += getCalculatedPoints(pts);
+          }
+          this.audio.playExplosion(false);
+          this.spawnExplosion(e.x, e.y, e.color, 24);
+          this.enemies.splice(i, 1);
+          continue;
+        }
+
         const pts = e.points;
         this.sessionShips++;
         if (!d.isPeacefulMode) {
@@ -1443,9 +1465,16 @@ class ExploreGameEngine {
 
     for (let i = this.asteroids.length - 1; i >= 0; i--) {
       const a = this.asteroids[i];
-      if (!this.isInvulnerable && hitBox(a.x, a.y, a.size * 0.8, a.size * 0.8, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
-        this.destroyAsteroid(i, getCalculatedPoints);
-        this.damagePlayer(4);
+      if (hitBox(a.x, a.y, a.size * 0.8, a.size * 0.8, this.ship.x, this.ship.y, this.ship.w * 0.85, this.ship.h * 0.85)) {
+        if (this.hasPrismaticInvincibility) {
+          this.destroyAsteroid(i, getCalculatedPoints);
+          continue;
+        }
+
+        if (!this.isInvulnerable) {
+          this.destroyAsteroid(i, getCalculatedPoints);
+          this.damagePlayer(4);
+        }
       }
     }
   }
@@ -1498,6 +1527,8 @@ class ExploreGameEngine {
   }
 
   damagePlayer(amount) {
+    if (this.hasPrismaticInvincibility) return;
+
     if (this.haloAvailable && amount >= 4) {
       this.haloAvailable = false;
       this.isInvulnerable = true;
@@ -1516,19 +1547,10 @@ class ExploreGameEngine {
         this.ship.hp = this.ship.maxHP;
         this.invulnTimer = 2.0;
         this.enemyBullets = [];
-        this.bullets = [];
-
-        for (let i = 0; i < this.enemies.length; i++) {
-          const e = this.enemies[i];
-          if (!e.isHydraMinion) {
-            this.spawnExplosion(e.x, e.y, e.color, 12);
-          }
-        }
-        
-        this.enemies = this.enemies.filter(e => e.isHydraMinion);
-
+        this.enemies.forEach(e => this.spawnExplosion(e.x, e.y, e.color, 20));
+        this.enemies = [];
         this.audio.playChargeBeamSound();
-        this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 35);
+        this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 45);
         return;
       }
       this.audio.switchToNormalMusic();
@@ -1792,15 +1814,28 @@ class ExploreGameEngine {
     }
 
     if (!this.isGameOver || this.isManualEnd) {
+      ctx.save();
+      
+      // Mario-style flashing effect when Infinite Power Prism is active
+      if (this.hasPrismaticInvincibility) {
+        const flashSpeed = 0.025;
+        const isVisible = Math.floor(performance.now() * flashSpeed) % 2 === 0;
+        ctx.globalAlpha = isVisible ? 1.0 : 0.3;
+        ctx.shadowColor = "#f1c40f";
+        ctx.shadowBlur = 20;
+      }
+
       this.drawPolygon(
         this.stats.data.selectedShipShape,
         this.ship.x,
         this.ship.y,
         this.ship.w,
         this.ship.h,
-        this.stats.data.selectedShipColor,
+        this.hasPrismaticInvincibility ? "#f1c40f" : this.stats.data.selectedShipColor,
         false
       );
+
+      ctx.restore();
 
       if (this.haloAvailable) {
         ctx.save();
