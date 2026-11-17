@@ -205,7 +205,7 @@ class ExploreGameEngine {
     this.haloAvailable = this.activeModules.has("halo_barrier");
     this.hasAiDrone = this.activeModules.has("ai_drone");
 
-    // Initialize Infinite Power Prism distance threshold (first 10,000 meters)
+    // Initialize Infinite Power Prism distance threshold (first 25,000 meters)
     this.hasPrismaticInvincibility = this.activeModules.has("infinite_power_prism");
 
     const d = this.stats.data;
@@ -752,7 +752,7 @@ class ExploreGameEngine {
         const distanceDelta = 220 * passiveDistanceMultiplier * dt;
         this.distance += distanceDelta;
 
-        // Check if Infinite Power Prism threshold (10,000 meters) has expired
+        // Check if Infinite Power Prism threshold (25,000 meters) has expired
         if (this.hasPrismaticInvincibility && this.distance >= 25000) {
           this.hasPrismaticInvincibility = false;
         }
@@ -1816,14 +1816,17 @@ class ExploreGameEngine {
     if (!this.isGameOver || this.isManualEnd) {
       ctx.save();
       
-      // Mario-style flashing effect when Infinite Power Prism is active
+      // True high-speed Mario-style flashing effect when Infinite Power Prism is active
       if (this.hasPrismaticInvincibility) {
-        const flashSpeed = 0.025;
-        const isVisible = Math.floor(performance.now() * flashSpeed) % 2 === 0;
-        ctx.globalAlpha = isVisible ? 1.0 : 0.3;
+        const isVisible = Math.floor(performance.now() / 80) % 2 === 0;
+        ctx.globalAlpha = isVisible ? 1.0 : 0.15;
         ctx.shadowColor = "#f1c40f";
         ctx.shadowBlur = 20;
       }
+
+      const renderColor = this.hasPrismaticInvincibility && Math.floor(performance.now() / 80) % 4 === 0 
+        ? "#ffffff" 
+        : (this.hasPrismaticInvincibility ? "#f1c40f" : this.stats.data.selectedShipColor);
 
       this.drawPolygon(
         this.stats.data.selectedShipShape,
@@ -1831,7 +1834,7 @@ class ExploreGameEngine {
         this.ship.y,
         this.ship.w,
         this.ship.h,
-        this.hasPrismaticInvincibility ? "#f1c40f" : this.stats.data.selectedShipColor,
+        renderColor,
         false
       );
 
