@@ -479,7 +479,8 @@ class ExploreGameEngine {
 
   triggerMegaBoss(tier) {
     this.isBossActive = true;
-    this.audio.switchToBossMusic(tier);
+    const isRebornPhoenix = tier === 120000 && this.boss && this.boss.phoenixState === "reborn";
+    this.audio.switchToBossMusic(tier, isRebornPhoenix);
     this.enemies = [];
     this.asteroids = [];
 
@@ -984,6 +985,13 @@ class ExploreGameEngine {
           this.boss.maxHp = 150;
           this.boss.hp = 150;
           this.boss.color = "#ff2200";
+          
+          // Trigger custom rebirth sound effect & switch to the Reborn boss music theme!
+          if (this.audio && typeof this.audio.playPhoenixRebirthSound === "function") {
+            this.audio.playPhoenixRebirthSound();
+          }
+          this.audio.switchToBossMusic(120000, true);
+
           this.spawnExplosion(this.boss.x, this.boss.y, "#ffaa00", 50);
         }
         return; 
