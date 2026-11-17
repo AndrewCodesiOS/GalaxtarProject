@@ -1047,18 +1047,36 @@ document.addEventListener("DOMContentLoaded", () => {
     container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">Synchronizing with galactic telemetry...</p>`;
 
     try {
-      dbRef.orderByChild("distance").limitToLast(10).once("value", snapshot => {
-        const scores = [];
+      dbRef.orderByChild("distance").limitToLast(100).once("value", snapshot => {
+        const rawScores = [];
         snapshot.forEach(childSnapshot => {
-          scores.push(childSnapshot.val());
+          rawScores.push(childSnapshot.val());
         });
 
-        scores.reverse();
-
-        if (scores.length === 0) {
+        if (rawScores.length === 0) {
           container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">No flight records found yet.</p>`;
           return;
         }
+
+        // Aggregate to keep only the highest score per unique player name
+        const bestScoresMap = {};
+        rawScores.forEach(row => {
+          const name = (row.name || "Unknown").trim();
+          const distance = Number(row.distance) || 0;
+
+          if (!bestScoresMap[name] || distance > bestScoresMap[name].distance) {
+            bestScoresMap[name] = {
+              name: name,
+              distance: distance,
+              date: row.date || ""
+            };
+          }
+        });
+
+        // Convert to array, sort descending by distance, and grab top 10 unique players
+        const uniqueScores = Object.values(bestScoresMap)
+          .sort((a, b) => b.distance - a.distance)
+          .slice(0, 10);
 
         let html = `
           <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #3498db; max-width: 600px; margin: 0 auto;">
@@ -1067,8 +1085,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        scores.forEach((row, index) => {
-          const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        uniqueScores.forEach((row, index) => {
+          const safeName = row.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
           html += `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
               <span>#${index + 1} ${safeName}</span>
