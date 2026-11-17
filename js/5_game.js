@@ -753,7 +753,7 @@ class ExploreGameEngine {
         this.distance += distanceDelta;
 
         // Check if Infinite Power Prism threshold (10,000 meters) has expired
-        if (this.hasPrismaticInvincibility && this.distance >= 10000) {
+        if (this.hasPrismaticInvincibility && this.distance >= 25000) {
           this.hasPrismaticInvincibility = false;
         }
 
