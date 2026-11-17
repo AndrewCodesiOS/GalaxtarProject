@@ -68,6 +68,12 @@ class ExploreGameEngine {
     this.isGameOver = false;
     this.isManualEnd = false;
 
+    // Death Animation State
+    this.isDying = false;
+    this.deathTimer = 0;
+    this.deathAlpha = 1.0;
+    this.deathCause = "";
+
     // Boss State Properties & Milestone Trackers
     this.isBossActive = false;
     this.bossDefeatedAt40k = false;
@@ -86,10 +92,23 @@ class ExploreGameEngine {
     this.bindInputs();
   }
 
+  getEnemyDisplayName(typeKey, isHydraMinion = false) {
+    if (isHydraMinion) return "Hydra Swarm Drone";
+    const names = {
+      normal: "Red Ship",
+      purpleBoss: "Purple Interceptor",
+      greenBoss: "Green Dreadnought",
+      orangeBoss: "Gold Octagon Fighter",
+      blueBoss: "Blue Heavy Cruiser",
+      mirrorShip: "Mirror Ship"
+    };
+    return names[typeKey] || "Hostile Ship";
+  }
+
   bindInputs() {
     window.addEventListener("keydown", e => {
       this.keys[e.code] = true;
-      if (e.code === "Space" && this.isRunning && !this.isPaused && !this.isGameOver) {
+      if (e.code === "Space" && this.isRunning && !this.isPaused && !this.isGameOver && !this.isDying) {
         e.preventDefault();
         if (!this.stats.data.isPeacefulMode) this.shoot();
       }
@@ -99,7 +118,7 @@ class ExploreGameEngine {
     });
 
     const onDown = e => {
-      if (!this.isRunning || this.isGameOver || this.isPaused) return;
+      if (!this.isRunning || this.isGameOver || this.isPaused || this.isDying) return;
       if (e.target.closest(".hud-btn")) return;
       if (e.cancelable) {
         e.preventDefault();
@@ -129,7 +148,7 @@ class ExploreGameEngine {
     };
 
     const onMove = e => {
-      if (!this.isRunning || this.isPaused || this.isGameOver) return;
+      if (!this.isRunning || this.isPaused || this.isGameOver || this.isDying) return;
       if (this.stats.data.currentFuel <= 0 && !this.stats.data.isPeacefulMode) return;
 
       if (e.touches) {
@@ -163,7 +182,7 @@ class ExploreGameEngine {
       if (e.touches) {
         for (let i = 0; i < e.changedTouches.length; i++) {
           const t = e.changedTouches[i];
-          if (t.identifier === this.shipDragTouchId && !this.hasMovedDistance && !this.stats.data.isPeacefulMode) {
+          if (t.identifier === this.shipDragTouchId && !this.hasMovedDistance && !this.stats.data.isPeacefulMode && !this.isDying) {
             this.shoot();
           }
           this.activeTouches.delete(t.identifier);
@@ -179,7 +198,7 @@ class ExploreGameEngine {
           }
         }
       } else {
-        if (!this.hasMovedDistance && this.isMouseDown && !this.stats.data.isPeacefulMode) {
+        if (!this.hasMovedDistance && this.isMouseDown && !this.stats.data.isPeacefulMode && !this.isDying) {
           this.shoot();
         }
         this.isMouseDown = false;
@@ -283,6 +302,10 @@ class ExploreGameEngine {
     this.isPaused = false;
     this.isGameOver = false;
     this.isManualEnd = false;
+    this.isDying = false;
+    this.deathTimer = 0;
+    this.deathAlpha = 1.0;
+    this.deathCause = "";
     this.isInvulnerable = false;
     this.invulnTimer = 0;
     this.regenTimer = 0;
@@ -427,6 +450,7 @@ class ExploreGameEngine {
 
   enemyShoot(enemy) {
     const spd = 300;
+    const shooterLabel = this.getEnemyDisplayName(enemy.typeKey, enemy.isHydraMinion);
     const shootAngle = angle => {
       const dx = this.ship.x - enemy.x;
       const dy = this.ship.y - enemy.y;
@@ -441,7 +465,8 @@ class ExploreGameEngine {
         vx: rx * spd,
         vy: ry * spd,
         size: 8,
-        color: enemy.color
+        color: enemy.color,
+        sourceName: shooterLabel
       });
     };
 
@@ -472,7 +497,8 @@ class ExploreGameEngine {
             vx: 0,
             vy: spd,
             size: 8,
-            color: enemy.color
+            color: enemy.color,
+            sourceName: shooterLabel
           });
         });
         break;
@@ -578,6 +604,9 @@ class ExploreGameEngine {
   bossShoot() {
     if (!this.boss) return;
     const spd = 280;
+    const bossName = this.boss.tier === 120000 && this.boss.phoenixState === "reborn"
+      ? "HELIOS PHOENIX (REBORN)"
+      : this.boss.name;
 
     if (this.boss.tier === 40000) {
       [-0.5, -0.25, 0, 0.25, 0.5].forEach(ang => {
@@ -587,7 +616,9 @@ class ExploreGameEngine {
           vx: ang * 150,
           vy: spd,
           size: 10,
-          color: "#ff3366"
+          color: "#ff3366",
+          sourceName: bossName,
+          isBossBullet: true
         });
       });
     } else if (this.boss.tier === 80000) {
@@ -600,7 +631,9 @@ class ExploreGameEngine {
           vx: Math.cos(angle) * 220,
           vy: Math.sin(angle) * 220,
           size: 8,
-          color: "#00ffff"
+          color: "#00ffff",
+          sourceName: bossName,
+          isBossBullet: true
         });
       }
     } else if (this.boss.tier === 120000) {
@@ -623,7 +656,9 @@ class ExploreGameEngine {
           vx: Math.sin(currentAngle) * 280,
           vy: spd * speedMult,
           size: isReborn ? 10 : 8,
-          color: isReborn ? "#ff2200" : "#ff8800"
+          color: isReborn ? "#ff2200" : "#ff8800",
+          sourceName: bossName,
+          isBossBullet: true
         });
       }
     } else if (this.boss.tier === 160000) {
@@ -634,7 +669,9 @@ class ExploreGameEngine {
           vx: 0,
           vy: 180,
           size: 10,
-          color: "#c084fc"
+          color: "#c084fc",
+          sourceName: bossName,
+          isBossBullet: true
         });
       });
     } else if (this.boss.tier === 200000) {
@@ -650,7 +687,9 @@ class ExploreGameEngine {
               vx: i * 50,
               vy: 340,
               size: 11,
-              color: "#ff0055"
+              color: "#ff0055",
+              sourceName: bossName,
+              isBossBullet: true
             });
           }
         };
@@ -671,7 +710,9 @@ class ExploreGameEngine {
             vx: i * 50,
             vy: 340,
             size: 11,
-            color: "#ffffff"
+            color: "#ffffff",
+            sourceName: bossName,
+            isBossBullet: true
           });
         }
       }
@@ -746,7 +787,7 @@ class ExploreGameEngine {
     const passiveDistanceMultiplier = thrusterInfo.speedMultiplier * overdriveMult;
     const speedMult = 1.0;
 
-    if (!this.isGameOver) {
+    if (!this.isGameOver && !this.isDying) {
       if (!this.isBossActive) {
         this.elapsedTime += dt;
         const distanceDelta = 220 * passiveDistanceMultiplier * dt;
@@ -902,12 +943,22 @@ class ExploreGameEngine {
       }
     }
 
+    // Handle Ship Explosion & Fade-Out Sequence
+    if (this.isDying) {
+      this.deathTimer -= dt;
+      this.deathAlpha = Math.max(0, this.deathTimer / 1.2);
+      if (this.deathTimer <= 0) {
+        this.isDying = false;
+        this.triggerGameOver(false, this.deathCause);
+      }
+    }
+
     for (const s of this.stars) {
       s.y += s.speed * speedMult * dt;
       if (s.y > this.canvas.height) {
         s.y = -4;
         s.x = Math.random() * this.canvas.width;
-        if (!this.isGameOver) this.sessionStars++;
+        if (!this.isGameOver && !this.isDying) this.sessionStars++;
       }
     }
 
@@ -926,7 +977,7 @@ class ExploreGameEngine {
     this.planets = this.planets.filter(p => {
       p.y += p.speed * speedMult * dt;
       if (p.y - p.r > this.canvas.height) {
-        if (!this.isGameOver) this.sessionPlanets++;
+        if (!this.isGameOver && !this.isDying) this.sessionPlanets++;
         return false;
       }
       return true;
@@ -946,13 +997,13 @@ class ExploreGameEngine {
       ss.x += ss.vx * dt;
       ss.y += ss.vy * dt;
       if (ss.y > this.canvas.height + 30) {
-        if (!this.isGameOver) this.sessionShootingStars++;
+        if (!this.isGameOver && !this.isDying) this.sessionShootingStars++;
         return false;
       }
       return true;
     });
 
-    if (!this.isBossActive) {
+    if (!this.isBossActive && !this.isDying) {
       this.asteroidSpawnTimer += dt * speedMult;
       if (this.asteroidSpawnTimer >= 3.2) {
         this.asteroidSpawnTimer = 0;
@@ -986,7 +1037,7 @@ class ExploreGameEngine {
       }
     }
 
-    if (this.isBossActive && this.boss) {
+    if (this.isBossActive && this.boss && !this.isDying) {
       if (this.boss.tier === 120000 && this.boss.phoenixState === "rebirthing") {
         this.boss.rebirthTimer -= dt;
         if (this.boss.rebirthTimer <= 0) {
@@ -1063,7 +1114,7 @@ class ExploreGameEngine {
         } else {
           e.y += 150 * enemySpeedMult * dt;
         }
-        if (!this.isGameOver && e.y < this.ship.y) {
+        if (!this.isGameOver && !this.isDying && e.y < this.ship.y) {
           e.shotTimer += dt;
           if (e.shotTimer >= 1.4) {
             e.shotTimer = 0;
@@ -1098,7 +1149,7 @@ class ExploreGameEngine {
       e.x += e.vx * dt;
       e.y += 150 * enemySpeedMult * dt;
 
-      if (!this.isGameOver && e.y < this.ship.y) {
+      if (!this.isGameOver && !this.isDying && e.y < this.ship.y) {
         e.shotTimer += dt;
         if (e.shotTimer >= 1.0) {
           e.shotTimer = 0;
@@ -1197,7 +1248,7 @@ class ExploreGameEngine {
       return t.alpha > 0;
     });
 
-    if (!this.isGameOver) {
+    if (!this.isGameOver && !this.isDying) {
       this.handleCollisions();
     }
   }
@@ -1286,7 +1337,10 @@ class ExploreGameEngine {
       }
 
       if (hitBox(this.boss?.x || 0, this.boss?.y || 0, this.boss?.w || 0, this.boss?.h || 0, this.ship.x, this.ship.y, this.ship.w, this.ship.h)) {
-        this.damagePlayer(999);
+        const bossName = this.boss.tier === 120000 && this.boss.phoenixState === "reborn"
+          ? "HELIOS PHOENIX (REBORN)"
+          : this.boss.name;
+        this.damagePlayer(999, `Destroyed by ${bossName}`);
       }
     }
 
@@ -1430,7 +1484,10 @@ class ExploreGameEngine {
         this.enemyBullets.splice(i, 1);
         if (this.hasPrismaticInvincibility) continue;
         if (!this.isInvulnerable) {
-          this.damagePlayer(1);
+          const killerCause = eb.isBossBullet
+            ? `Destroyed by ${eb.sourceName}`
+            : `Shot down by a ${eb.sourceName || "Hostile Ship"}`;
+          this.damagePlayer(1, killerCause);
         }
       }
     }
@@ -1451,13 +1508,14 @@ class ExploreGameEngine {
         }
 
         const pts = e.points;
+        const enemyName = this.getEnemyDisplayName(e.typeKey, e.isHydraMinion);
         this.sessionShips++;
         if (!d.isPeacefulMode) {
           this.sessionPoints += getCalculatedPoints(pts);
         }
         this.spawnExplosion(e.x, e.y, e.color, 24);
         this.enemies.splice(i, 1);
-        this.damagePlayer(999);
+        this.damagePlayer(999, `Crashed into a ${enemyName}`);
         break;
       }
     }
@@ -1472,7 +1530,7 @@ class ExploreGameEngine {
 
         if (!this.isInvulnerable) {
           this.destroyAsteroid(i, getCalculatedPoints);
-          this.damagePlayer(4);
+          this.damagePlayer(4, "Crushed by an Asteroid");
         }
       }
     }
@@ -1531,8 +1589,8 @@ class ExploreGameEngine {
     this.asteroids.splice(index, 1);
   }
 
-  damagePlayer(amount) {
-    if (this.hasPrismaticInvincibility) return;
+  damagePlayer(amount, cause = "Destroyed in Deep Space") {
+    if (this.hasPrismaticInvincibility || this.isDying || this.isGameOver) return;
 
     if (this.haloAvailable && amount >= 4) {
       this.haloAvailable = false;
@@ -1578,20 +1636,23 @@ class ExploreGameEngine {
         return;
       }
       
+      // Trigger Explosion & Fade-Out before showing Game Over screen
+      this.isDying = true;
+      this.deathTimer = 1.2;
+      this.deathAlpha = 1.0;
+      this.deathCause = cause;
       this.audio.switchToNormalMusic();
-      this.triggerGameOver(false);
+      this.audio.playExplosion(false);
+      this.spawnExplosion(this.ship.x, this.ship.y, this.stats.data.selectedShipColor, 48);
+      this.spawnExplosion(this.ship.x, this.ship.y, "#ffffff", 20);
     }
   }
 
-  triggerGameOver(manualEnd = false) {
+  triggerGameOver(manualEnd = false, deathCause = "Destroyed in Deep Space") {
     if (this.isGameOver) return;
     this.isGameOver = true;
     this.isManualEnd = manualEnd;
     this.audio.switchToNormalMusic();
-    if (!manualEnd) {
-      this.audio.playExplosion(false);
-      this.spawnExplosion(this.ship.x, this.ship.y, this.stats.data.selectedShipColor, 34);
-    }
 
     const d = this.stats.data;
     const distInt = Math.floor(this.distance);
@@ -1638,7 +1699,8 @@ class ExploreGameEngine {
       asteroids: this.sessionAsteroids,
       fuelConsumed,
       time: this.elapsedTime,
-      isPeaceful: d.isPeacefulMode
+      isPeaceful: d.isPeacefulMode,
+      cause: manualEnd ? "Flight Ended Manually" : deathCause
     });
   }
 
@@ -1763,7 +1825,7 @@ class ExploreGameEngine {
       ctx.restore();
     }
 
-    if (this.isCharging) {
+    if (this.isCharging && !this.isDying) {
       ctx.save();
       ctx.fillStyle = "#ffffff";
       ctx.shadowColor = this.stats.data.selectedShipColor;
@@ -1840,8 +1902,10 @@ class ExploreGameEngine {
 
     if (!this.isGameOver || this.isManualEnd) {
       ctx.save();
-      
-      if (this.hasPrismaticInvincibility) {
+
+      if (this.isDying) {
+        ctx.globalAlpha = this.deathAlpha;
+      } else if (this.hasPrismaticInvincibility) {
         const isVisible = Math.floor(performance.now() / 80) % 2 === 0;
         ctx.globalAlpha = isVisible ? 1.0 : 0.15;
         ctx.shadowColor = "#f1c40f";
@@ -1864,7 +1928,7 @@ class ExploreGameEngine {
 
       ctx.restore();
 
-      if (this.haloAvailable) {
+      if (this.haloAvailable && !this.isDying) {
         ctx.save();
         ctx.strokeStyle = "#00ffff";
         ctx.lineWidth = 2.5;
@@ -1876,7 +1940,7 @@ class ExploreGameEngine {
         ctx.restore();
       }
 
-      if (this.hasAiDrone && this.drone) {
+      if (this.hasAiDrone && this.drone && !this.isDying) {
         const dColor = this.stats.data.selectedDroneColor || this.stats.data.selectedShipColor;
         this.drawPolygon("triangle", this.drone.x, this.drone.y, this.drone.w, this.drone.h, dColor, false);
       }
