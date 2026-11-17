@@ -721,7 +721,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Settings Toggles & Reset + Secret Cheat Code Logic
   let cheatStep = 0;
-  let droneCheatStep = 0;
+  let secretUnlockStep = 0; // Tracks sequence for awarding both AI Drone and Phoenix Protocol
 
   function updateSettingsDisplay() {
     const d = stats.data;
@@ -745,12 +745,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Clean sequential step-checker for the AI Companion Drone cheat
-  const advanceDroneCheat = (expectedStep) => {
-    if (droneCheatStep === expectedStep) {
-      droneCheatStep++;
+  // Clean sequential step-checker for the secret unlock cheat
+  const advanceSecretUnlock = (expectedStep) => {
+    if (secretUnlockStep === expectedStep) {
+      secretUnlockStep++;
     } else {
-      droneCheatStep = 0;
+      secretUnlockStep = 0;
     }
   };
 
@@ -765,34 +765,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (pOn) {
     pOn.addEventListener("click", () => {
-      if (droneCheatStep === 0) droneCheatStep = 1;
-      else droneCheatStep = 0;
+      if (secretUnlockStep === 0) secretUnlockStep = 1;
+      else secretUnlockStep = 0;
     });
   }
   if (pOff) {
-    if (pOff) pOff.addEventListener("click", () => advanceDroneCheat(1));
+    if (pOff) pOff.addEventListener("click", () => advanceSecretUnlock(1));
   }
   if (hOn) {
-    hOn.addEventListener("click", () => advanceDroneCheat(2));
+    hOn.addEventListener("click", () => advanceSecretUnlock(2));
   }
   if (hOff) {
-    hOff.addEventListener("click", () => advanceDroneCheat(3));
+    hOff.addEventListener("click", () => advanceSecretUnlock(3));
   }
   if (mOff) {
-    mOff.addEventListener("click", () => advanceDroneCheat(4));
+    mOff.addEventListener("click", () => advanceSecretUnlock(4));
   }
   if (mOn) {
     mOn.addEventListener("click", () => {
-      advanceDroneCheat(5);
+      advanceSecretUnlock(5);
       if (cheatStep === 4) cheatStep = 5;
     });
   }
   if (sOff) {
-    sOff.addEventListener("click", () => advanceDroneCheat(6));
+    sOff.addEventListener("click", () => advanceSecretUnlock(6));
   }
   if (sOn) {
     sOn.addEventListener("click", () => {
-      advanceDroneCheat(7);
+      advanceSecretUnlock(7);
       if (cheatStep === 3) cheatStep = 4;
     });
   }
@@ -846,11 +846,11 @@ document.addEventListener("DOMContentLoaded", () => {
         cheatStep = 1;
       } else if (cheatStep === 5) {
         cheatStep = 6;
-      } else if (droneCheatStep === 8) {
-        droneCheatStep = 9; // 9th step: clicked reset prompt after sfx on
+      } else if (secretUnlockStep === 8) {
+        secretUnlockStep = 9; // 9th step: clicked reset prompt after sfx on
       } else {
         cheatStep = 0;
-        droneCheatStep = 0;
+        secretUnlockStep = 0;
       }
     });
   }
@@ -867,14 +867,15 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.save();
         alert("DEV CHEAT ACTIVATED: +50,000 Points Added!");
         cheatStep = 0;
-      } else if (droneCheatStep === 9) {
-        // 10th step (Cancel): Awards the AI Drone!
+      } else if (secretUnlockStep === 9) {
+        // Awards both the AI Drone and Phoenix Protocol simultaneously!
         stats.addModule("ai_drone", 1);
-        alert("SECRET UNLOCKED: AI Companion Drone added to your hangar inventory!");
-        droneCheatStep = 0;
+        stats.addModule("phoenix_protocol", 1);
+        alert("SECRET UNLOCKED: AI Companion Drone & Phoenix Protocol added to your hangar inventory!");
+        secretUnlockStep = 0;
       } else {
         cheatStep = 0;
-        droneCheatStep = 0;
+        secretUnlockStep = 0;
       }
     });
   }
