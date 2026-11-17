@@ -1025,19 +1025,33 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
-  const dbRef = firebase.database().ref("leaderboard");
+  
+  // We use a separate 'players' node to track each unique pilot's best run
+  const playersRef = firebase.database().ref("players");
 
   async function submitScore(pilotName, distance) {
     try {
-      const newScoreRef = dbRef.push();
-      await newScoreRef.set({
-        name: pilotName,
-        distance: distance,
-        date: new Date().toLocaleDateString(),
-        timestamp: firebase.database.ServerValue.TIMESTAMP
+      const cleanName = pilotName.trim();
+      const safeKey = cleanName.toLowerCase().replace(/[^a-z0-9]/g, "_"); // Safe Firebase key
+      const playerRef = playersRef.child(safeKey);
+
+      // Check their current stored high score
+      playerRef.once("value", snapshot => {
+        const existingData = snapshot.val();
+        const currentBest = existingData ? existingData.distance : 0;
+
+        // Only update if this run beats their personal best (or if they don't exist yet)
+        if (distance > currentBest) {
+          playerRef.set({
+            name: cleanName,
+            distance: distance,
+            date: new Date().toLocaleDateString(),
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          });
+        }
       });
     } catch (err) {
-      console.error("Failed to upload score to Firebase:", err);
+      console.error("Failed to update pilot telemetry in Firebase:", err);
     }
   }
 
@@ -1047,36 +1061,20 @@ document.addEventListener("DOMContentLoaded", () => {
     container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">Synchronizing with galactic telemetry...</p>`;
 
     try {
-      dbRef.orderByChild("distance").limitToLast(100).once("value", snapshot => {
-        const rawScores = [];
+      // Query the players node directly, sorted by distance, limited to top 10
+      playersRef.orderByChild("distance").limitToLast(10).once("value", snapshot => {
+        const scores = [];
         snapshot.forEach(childSnapshot => {
-          rawScores.push(childSnapshot.val());
+          scores.push(childSnapshot.val());
         });
 
-        if (rawScores.length === 0) {
+        // Since limitToLast gives us lowest to highest of the top 10, reverse to show #1 at the top
+        scores.reverse();
+
+        if (scores.length === 0) {
           container.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">No flight records found yet.</p>`;
           return;
         }
-
-        // Aggregate to keep only the highest score per unique player name
-        const bestScoresMap = {};
-        rawScores.forEach(row => {
-          const name = (row.name || "Unknown").trim();
-          const distance = Number(row.distance) || 0;
-
-          if (!bestScoresMap[name] || distance > bestScoresMap[name].distance) {
-            bestScoresMap[name] = {
-              name: name,
-              distance: distance,
-              date: row.date || ""
-            };
-          }
-        });
-
-        // Convert to array, sort descending by distance, and grab top 10 unique players
-        const uniqueScores = Object.values(bestScoresMap)
-          .sort((a, b) => b.distance - a.distance)
-          .slice(0, 10);
 
         let html = `
           <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: bold; color: #3498db; max-width: 600px; margin: 0 auto;">
@@ -1085,8 +1083,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        uniqueScores.forEach((row, index) => {
-          const safeName = row.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        scores.forEach((row, index) => {
+          const safeName = (row.name || "Unknown").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
           html += `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); margin: 6px auto; border-radius: 6px; max-width: 600px;">
               <span>#${index + 1} ${safeName}</span>
