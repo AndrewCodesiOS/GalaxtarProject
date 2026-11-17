@@ -7,7 +7,7 @@ class AudioController {
     // Background music setup using your m4a file
     this.bgMusic = new Audio("galaxtartheme.m4a");
     this.bgMusic.loop = true;
-    this.bgMusic.volume = 0.5;
+    this.bgMusic.volume = 0.3;
 
     // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
@@ -239,7 +239,7 @@ class AudioController {
       osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
       // Lowered gain/volume specifically for bullet SFX
-      gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.01, this.audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.005, this.audioCtx.currentTime + 0.1);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
@@ -261,7 +261,7 @@ class AudioController {
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
       osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
-      gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
@@ -291,7 +291,7 @@ class AudioController {
       filter.frequency.setValueAtTime(isAsteroid ? 400 : 800, this.audioCtx.currentTime);
       filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.3);
       const gain = this.audioCtx.createGain();
-      gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
       noise.connect(filter);
       filter.connect(gain);
