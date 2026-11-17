@@ -145,7 +145,7 @@ const GALAXTAR_DATA = {
       color: "#3498db",
       price: 75,
       weight: 15,
-      desc: "Grants absolute invincibility for the first 10,000 meters of flight. Smash through enemies and asteroids!"
+      desc: "Grants absolute invincibility for the first 25,000m of flight. Smash through enemies and asteroids!"
     },
     {
       id: "phoenix_protocol",
