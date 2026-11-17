@@ -61,6 +61,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Final Boss Victory Modal Elements & Global Trigger
+  const finalVictoryModal = document.getElementById("final-boss-victory-modal");
+  const finalVictoryMsg = document.getElementById("final-victory-msg");
+  const btnCloseVictory = document.getElementById("btn-close-victory");
+
+  window.showFinalBossVictoryModal = function() {
+    const pilotName = stats.data.pilotName.trim() || "Pilot";
+    if (finalVictoryMsg) {
+      finalVictoryMsg.innerText = `You've defeated all five space titans, now travel as far as you can go, ${pilotName}!`;
+    }
+    if (finalVictoryModal) {
+      finalVictoryModal.classList.remove("hidden");
+    }
+  };
+
+  if (btnCloseVictory) {
+    btnCloseVictory.addEventListener("click", () => {
+      if (finalVictoryModal) {
+        finalVictoryModal.classList.add("hidden");
+      }
+    });
+  }
+
   function showView(viewId) {
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
     const target = document.getElementById(viewId);
