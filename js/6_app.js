@@ -475,10 +475,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const grid = document.getElementById("gameover-grid");
     
     const finalName = stats.data.pilotName.trim() || "Unknown Pilot";
+    const causeText = res.cause || "Destroyed in Deep Space";
 
     if (grid) {
       grid.innerHTML = `
-        <div>Distance: ${res.distance}</div>
+        <div style="grid-column: span 2; color: #e74c3c; font-weight: bold; border-color: rgba(231, 76, 60, 0.35); background: rgba(231, 76, 60, 0.1);">
+          ${causeText}
+        </div>
+        <div>Distance: ${res.distance} m</div>
         <div>Ships Destroyed: ${res.ships}</div>
         <div>Asteroids: ${res.asteroids}</div>
         <div>Points Earned: ${res.points}</div>
