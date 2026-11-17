@@ -1550,26 +1550,31 @@ class ExploreGameEngine {
     if (this.ship.hp <= 0) {
       if (this.phoenixAvailable) {
         this.phoenixAvailable = false;
-        this.ship.hp = this.ship.maxHP;
-        this.invulnTimer = 2.0;
         
-        // Clear bullets and enemies safely to prevent frame stalls
-        this.enemyBullets = [];
-        const oldEnemies = [...this.enemies];
-        this.enemies = [];
-        
-        // Stagger particle explosions slightly to prevent render queue choking
-        oldEnemies.forEach((e, index) => {
-          setTimeout(() => {
-            this.spawnExplosion(e.x, e.y, e.color, 15);
-          }, index * 10);
-        });
+        // Defer heavy state changes to the next animation frame to prevent race conditions/freezes
+        requestAnimationFrame(() => {
+          this.ship.hp = this.ship.maxHP;
+          this.invulnTimer = 2.0;
+          
+          // Clear bullets and enemies safely
+          this.enemyBullets = [];
+          const oldEnemies = [...this.enemies];
+          this.enemies = [];
+          
+          // Stagger particle explosions smoothly
+          oldEnemies.forEach((e, index) => {
+            setTimeout(() => {
+              this.spawnExplosion(e.x, e.y, e.color, 15);
+            }, index * 10);
+          });
 
-        this.audio.playChargeBeamSound();
-        this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 45);
+          this.audio.playChargeBeamSound();
+          this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 45);
+          
+          // Force refresh timestamp
+          this.lastFrameTime = performance.now();
+        });
         
-        // Force refresh the last frame timestamp to prevent dt spikes
-        this.lastFrameTime = performance.now();
         return;
       }
       
