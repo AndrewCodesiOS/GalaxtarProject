@@ -1500,7 +1500,13 @@ class ExploreGameEngine {
     if (tier === 80000) this.bossDefeatedAt80k = true;
     if (tier === 120000) this.bossDefeatedAt120k = true;
     if (tier === 160000) this.bossDefeatedAt160k = true;
-    if (tier === 200000) this.bossDefeatedAt200k = true;
+    if (tier === 200000) {
+      this.bossDefeatedAt200k = true;
+      // Trigger final boss victory pop-up display with player name
+      if (window.showFinalBossVictoryModal) {
+        window.showFinalBossVictoryModal();
+      }
+    }
 
     this.boss = null;
     this.isBossActive = false;
