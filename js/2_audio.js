@@ -91,7 +91,7 @@ class AudioController {
       this.bossInterval = null;
     }
 
-    // Define unique musical profiles for each boss tier
+    // Define unique musical profiles for each boss tier (increased bass/lead volumes for a louder boss theme)
     let profile = {
       bassNotes: [110, 110, 130.81, 98.00],
       leadNotes: [220, 329.63, 440, 523.25],
@@ -164,7 +164,8 @@ class AudioController {
         bassOsc.type = profile.bassType;
         bassOsc.frequency.setValueAtTime(profile.bassNotes[Math.floor(step / 2) % profile.bassNotes.length], now);
         
-        bassGain.gain.setValueAtTime(0.12, now);
+        // Raised boss music gain for a louder, more prominent boss presence
+        bassGain.gain.setValueAtTime(0.24, now);
         bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
         bassOsc.connect(bassGain);
@@ -177,7 +178,7 @@ class AudioController {
         leadOsc.type = profile.leadType;
         leadOsc.frequency.setValueAtTime(profile.leadNotes[step % profile.leadNotes.length], now);
 
-        leadGain.gain.setValueAtTime(0.08, now);
+        leadGain.gain.setValueAtTime(0.18, now);
         leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
         leadOsc.connect(leadGain);
@@ -237,8 +238,9 @@ class AudioController {
       osc.type = "square";
       osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+      // Lowered gain/volume specifically for bullet SFX
+      gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.005, this.audioCtx.currentTime + 0.1);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
       osc.start();
