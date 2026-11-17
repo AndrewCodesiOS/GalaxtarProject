@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logManager,
     result => showGameOver(result)
   );
+  window.gameEngineInstance = gameEngine; // Expose instance for global triggers
 
   // Check if pilot name is set; if not, show mandatory intro modal
   const introModal = document.getElementById("intro-modal");
@@ -73,6 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (finalVictoryModal) {
       finalVictoryModal.classList.remove("hidden");
+    }
+    // Pause the game loop immediately so nothing happens behind the pop-up
+    if (window.gameEngineInstance) {
+      window.gameEngineInstance.pause();
     }
   };
 
