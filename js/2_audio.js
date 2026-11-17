@@ -239,7 +239,7 @@ class AudioController {
       osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(150, this.audioCtx.currentTime + 0.1);
       // Lowered gain/volume specifically for bullet SFX
-      gain.gain.setValueAtTime(0.01, this.audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.008, this.audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.005, this.audioCtx.currentTime + 0.1);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
@@ -261,7 +261,7 @@ class AudioController {
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
       osc.frequency.linearRampToValueAtTime(900, this.audioCtx.currentTime + 0.25);
-      gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.008, this.audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.25);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
