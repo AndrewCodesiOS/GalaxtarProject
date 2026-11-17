@@ -1516,10 +1516,19 @@ class ExploreGameEngine {
         this.ship.hp = this.ship.maxHP;
         this.invulnTimer = 2.0;
         this.enemyBullets = [];
-        this.enemies.forEach(e => this.spawnExplosion(e.x, e.y, e.color, 20));
-        this.enemies = [];
+        this.bullets = [];
+
+        for (let i = 0; i < this.enemies.length; i++) {
+          const e = this.enemies[i];
+          if (!e.isHydraMinion) {
+            this.spawnExplosion(e.x, e.y, e.color, 12);
+          }
+        }
+        
+        this.enemies = this.enemies.filter(e => e.isHydraMinion);
+
         this.audio.playChargeBeamSound();
-        this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 45);
+        this.spawnExplosion(this.ship.x, this.ship.y, "#f1c40f", 35);
         return;
       }
       this.audio.switchToNormalMusic();
