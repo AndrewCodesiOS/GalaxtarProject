@@ -81,6 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (finalVictoryModal) {
         finalVictoryModal.classList.add("hidden");
       }
+      // Resume active flight gameplay instead of returning to menu
+      showView("view-explore");
+      gameEngine.resume();
     });
   }
 
