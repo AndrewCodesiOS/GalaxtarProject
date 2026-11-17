@@ -71,7 +71,6 @@ class ExploreGameEngine {
     // Death Animation State
     this.isDying = false;
     this.deathTimer = 0;
-    this.deathAlpha = 1.0;
     this.deathCause = "";
 
     // Boss State Properties & Milestone Trackers
@@ -304,7 +303,6 @@ class ExploreGameEngine {
     this.isManualEnd = false;
     this.isDying = false;
     this.deathTimer = 0;
-    this.deathAlpha = 1.0;
     this.deathCause = "";
     this.isInvulnerable = false;
     this.invulnTimer = 0;
@@ -943,10 +941,9 @@ class ExploreGameEngine {
       }
     }
 
-    // Handle Ship Explosion & Fade-Out Sequence
+    // Handle Particle Explosion Sequence before Game Over overlay
     if (this.isDying) {
       this.deathTimer -= dt;
-      this.deathAlpha = Math.max(0, this.deathTimer / 1.2);
       if (this.deathTimer <= 0) {
         this.isDying = false;
         this.triggerGameOver(false, this.deathCause);
@@ -1636,15 +1633,15 @@ class ExploreGameEngine {
         return;
       }
       
-      // Trigger Explosion & Fade-Out before showing Game Over screen
+      // Trigger Particle Explosion before showing Game Over screen
       this.isDying = true;
-      this.deathTimer = 1.2;
-      this.deathAlpha = 1.0;
+      this.deathTimer = 0.95;
       this.deathCause = cause;
       this.audio.switchToNormalMusic();
       this.audio.playExplosion(false);
-      this.spawnExplosion(this.ship.x, this.ship.y, this.stats.data.selectedShipColor, 48);
-      this.spawnExplosion(this.ship.x, this.ship.y, "#ffffff", 20);
+      this.spawnExplosion(this.ship.x, this.ship.y, this.stats.data.selectedShipColor, 45);
+      this.spawnExplosion(this.ship.x, this.ship.y, "#ff9900", 25);
+      this.spawnExplosion(this.ship.x, this.ship.y, "#ffffff", 15);
     }
   }
 
@@ -1900,12 +1897,11 @@ class ExploreGameEngine {
       }
     }
 
-    if (!this.isGameOver || this.isManualEnd) {
+    // Hide the ship immediately upon death so only the particle explosion renders
+    if ((!this.isGameOver && !this.isDying) || this.isManualEnd) {
       ctx.save();
 
-      if (this.isDying) {
-        ctx.globalAlpha = this.deathAlpha;
-      } else if (this.hasPrismaticInvincibility) {
+      if (this.hasPrismaticInvincibility) {
         const isVisible = Math.floor(performance.now() / 80) % 2 === 0;
         ctx.globalAlpha = isVisible ? 1.0 : 0.15;
         ctx.shadowColor = "#f1c40f";
@@ -1928,7 +1924,7 @@ class ExploreGameEngine {
 
       ctx.restore();
 
-      if (this.haloAvailable && !this.isDying) {
+      if (this.haloAvailable) {
         ctx.save();
         ctx.strokeStyle = "#00ffff";
         ctx.lineWidth = 2.5;
@@ -1940,7 +1936,7 @@ class ExploreGameEngine {
         ctx.restore();
       }
 
-      if (this.hasAiDrone && this.drone && !this.isDying) {
+      if (this.hasAiDrone && this.drone) {
         const dColor = this.stats.data.selectedDroneColor || this.stats.data.selectedShipColor;
         this.drawPolygon("triangle", this.drone.x, this.drone.y, this.drone.w, this.drone.h, dColor, false);
       }
