@@ -12,6 +12,8 @@ class AudioController {
     // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
     this.bossInterval = null;
+    this.currentBossTier = null;
+    this.isPhoenixRebornMusic = false;
 
     // Automatically pause music when the app/tab goes to the background
     document.addEventListener("visibilitychange", () => {
@@ -52,7 +54,7 @@ class AudioController {
     this.musicEnabled = val;
     if (val) {
       if (this.isBossMusicPlaying) {
-        this.startBossSynth(this.currentBossTier || 40000);
+        this.startBossSynth(this.currentBossTier, this.isPhoenixRebornMusic);
       } else {
         this.bgMusic.play().catch(e => console.log("Music play error:", e));
       }
@@ -62,27 +64,32 @@ class AudioController {
     }
   }
 
-  switchToBossMusic(bossTier = 40000) {
+  switchToBossMusic(bossTier = 40000, isReborn = false) {
     this.isBossMusicPlaying = true;
     this.currentBossTier = bossTier;
+    this.isPhoenixRebornMusic = isReborn;
     this.bgMusic.pause();
     if (this.musicEnabled) {
-      this.startBossSynth(bossTier);
+      this.startBossSynth(bossTier, isReborn);
     }
   }
 
   switchToNormalMusic() {
     this.isBossMusicPlaying = false;
     this.currentBossTier = null;
+    this.isPhoenixRebornMusic = false;
     this.stopBossSynth();
     if (this.musicEnabled) {
       this.bgMusic.play().catch(e => console.log("Normal music play error:", e));
     }
   }
 
-  startBossSynth(tier) {
+  startBossSynth(tier, isReborn = false) {
     this.init();
-    if (this.bossInterval) return;
+    if (this.bossInterval) {
+      clearInterval(this.bossInterval);
+      this.bossInterval = null;
+    }
 
     // Define unique musical profiles for each boss tier
     let profile = {
@@ -103,14 +110,25 @@ class AudioController {
         tempo: 180
       };
     } else if (tier === 120000) {
-      // Helios Phoenix: Soaring, energetic high-register arpeggios
-      profile = {
-        bassNotes: [146.83, 220.00, 196.00, 164.81],
-        leadNotes: [440, 554.37, 659.25, 880],
-        bassType: "square",
-        leadType: "triangle",
-        tempo: 120
-      };
+      if (isReborn) {
+        // Helios Phoenix (REBORN): Ultra-frantic, blazing solar overdrive theme
+        profile = {
+          bassNotes: [110, 164.81, 146.83, 130.81],
+          leadNotes: [440, 659.25, 880, 987.77, 1046.50],
+          bassType: "sawtooth",
+          leadType: "sawtooth",
+          tempo: 100
+        };
+      } else {
+        // Helios Phoenix (Normal): Deep, heavy, commanding solar dreadnought theme
+        profile = {
+          bassNotes: [98.00, 146.83, 123.47, 110.00],
+          leadNotes: [293.66, 369.99, 440, 587.33],
+          bassType: "sawtooth",
+          leadType: "triangle",
+          tempo: 135
+        };
+      }
     } else if (tier === 160000) {
       // Hydra-9 Swarm: Chaotic, shifting multi-rhythms
       profile = {
@@ -178,6 +196,33 @@ class AudioController {
     if (this.bossInterval) {
       clearInterval(this.bossInterval);
       this.bossInterval = null;
+    }
+  }
+
+  playPhoenixRebirthSound() {
+    if (!this.sfxEnabled) return;
+    this.ensureActive();
+    if (!this.audioCtx) return;
+
+    try {
+      const now = this.audioCtx.currentTime;
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(100, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 1.5);
+
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 1.5);
+    } catch (e) {
+      console.log("Phoenix rebirth sound error:", e);
     }
   }
 
