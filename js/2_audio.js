@@ -7,7 +7,7 @@ class AudioController {
     // Background music setup using your m4a file
     this.bgMusic = new Audio("galaxtartheme.m4a");
     this.bgMusic.loop = true;
-    this.bgMusic.volume = 0.3;
+    this.bgMusic.volume = 0.2;
 
     // Procedural Boss Beat State
     this.isBossMusicPlaying = false;
@@ -165,7 +165,7 @@ class AudioController {
         bassOsc.frequency.setValueAtTime(profile.bassNotes[Math.floor(step / 2) % profile.bassNotes.length], now);
         
         // Raised boss music gain for a louder, more prominent boss presence
-        bassGain.gain.setValueAtTime(0.24, now);
+        bassGain.gain.setValueAtTime(0.15, now);
         bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
         bassOsc.connect(bassGain);
